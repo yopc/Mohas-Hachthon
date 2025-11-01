@@ -1,5 +1,5 @@
 import express from 'express';
-import { isOpenAIConfigured } from '../config/openai.js';
+import { isAIConfigured } from '../config/gemini.js';
 
 const router = express.Router();
 
@@ -9,7 +9,7 @@ router.get('/', (req, res) => {
     message: 'BrightSteps API is running',
     timestamp: new Date().toISOString(),
     features: {
-      openai: isOpenAIConfigured(),
+      ai: isAIConfigured(),
       email: !!(process.env.SMTP_USER && process.env.SMTP_PASS),
       mongodb: true,
     },

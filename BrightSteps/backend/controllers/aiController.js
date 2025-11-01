@@ -1,4 +1,4 @@
-import { generateAIResponse, generateJSON } from '../config/openai.js';
+import { generateAIResponse, generateJSON } from '../config/gemini.js';
 import GameRecord from '../models/GameRecord.js';
 import Child from '../models/Child.js';
 

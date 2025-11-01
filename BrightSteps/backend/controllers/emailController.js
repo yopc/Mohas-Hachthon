@@ -3,7 +3,7 @@ import generateEmailTemplate from '../utils/emailTemplate.js';
 import Child from '../models/Child.js';
 import Parent from '../models/Parent.js';
 import GameRecord from '../models/GameRecord.js';
-import { generateAIResponse } from '../config/openai.js';
+import { generateAIResponse } from '../config/gemini.js';
 
 /**
  * Send progress report email
@@ -91,9 +91,9 @@ export const sendProgressReport = async (childId, parent = null) => {
     // Generate AI suggestion
     let aiSuggestion = 'Keep up the great work! Consistent practice is helping build important skills.';
     try {
-      // Only try to generate AI suggestion if OpenAI is configured
-      const { isOpenAIConfigured } = await import('../config/openai.js');
-      if (isOpenAIConfigured()) {
+      // Only try to generate AI suggestion if Gemini is configured
+      const { isAIConfigured } = await import('../config/gemini.js');
+      if (isAIConfigured()) {
         const prompt = `
 Based on this child's weekly performance, provide ONE encouraging insight and suggestion for caregivers (2-3 sentences).
 
