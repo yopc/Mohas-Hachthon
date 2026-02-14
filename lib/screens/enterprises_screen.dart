@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mohas/screens/enterprise_registration_form.dart';
 import '../models/enterprise.dart';
 import '../theme/app_theme.dart';
 import '../widgets/enterprise_card.dart';
@@ -145,10 +146,15 @@ class _EnterprisesScreenState extends State<EnterprisesScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: AppTheme.primaryColor,
-        child: const Icon(Icons.add),
-      ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const EnterpriseRegistrationForm()),
+    );
+  },
+  backgroundColor: AppTheme.primaryColor,
+  child: const Icon(Icons.add),
+),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mohas/screens/coaching_session_form.dart';
 import '../data/seed_data.dart';
 import '../theme/app_theme.dart';
 import '../models/session.dart';
@@ -51,11 +52,16 @@ class _SessionsScreenState extends State<SessionsScreen> with SingleTickerProvid
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: AppTheme.primaryColor,
-        child: const Icon(Icons.add),
-      ),
+     floatingActionButton: FloatingActionButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CoachingSessionForm()),
+    );
+  },
+  backgroundColor: AppTheme.primaryColor,
+  child: const Icon(Icons.add),
+),
     );
   }
 

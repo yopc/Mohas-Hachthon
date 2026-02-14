@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mohas/screens/baseline_diagnosis_form.dart';
 import '../data/seed_data.dart';
 import '../theme/app_theme.dart';
 import '../models/assessment.dart';
@@ -125,11 +126,16 @@ class _AssessmentsScreenState extends State<AssessmentsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: AppTheme.primaryColor,
-        child: const Icon(Icons.add),
-      ),
+     floatingActionButton: FloatingActionButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const BaselineDiagnosisForm()),
+    );
+  },
+  backgroundColor: AppTheme.primaryColor,
+  child: const Icon(Icons.add),
+),
     );
   }
 }

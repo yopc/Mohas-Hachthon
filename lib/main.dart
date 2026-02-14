@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mohas/screens/enterprise_registration_form.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -15,6 +16,7 @@ class MyApp extends StatelessWidget {
       title: 'MESMER Coaching',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      // home: const EnterpriseRegistrationForm()
       home: const SplashScreen(),
     );
   }
