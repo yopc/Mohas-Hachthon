@@ -9,6 +9,7 @@ class CoachModel {
   final String phone;
   final String email;
   final String nationalId;
+  final String? profilePictureBase64; // New field for profile picture
   
   // Professional Information
   final String educationLevel;
@@ -17,7 +18,8 @@ class CoachModel {
   final String? fieldOfStudyOther;
   final int yearsOfExperience;
   final bool hasCertification;
-  final String? certificationUrl;
+  final String? certificationBase64; // Changed from certificationUrl to base64
+  final String? certificationFileName; // New field to store original filename
   final String region;
   final String zone;
   
@@ -42,13 +44,15 @@ class CoachModel {
     required this.phone,
     required this.email,
     required this.nationalId,
+    this.profilePictureBase64,
     required this.educationLevel,
     this.educationOther,
     required this.fieldOfStudy,
     this.fieldOfStudyOther,
     required this.yearsOfExperience,
     required this.hasCertification,
-    this.certificationUrl,
+    this.certificationBase64,
+    this.certificationFileName,
     required this.region,
     required this.zone,
     required this.username,
@@ -70,13 +74,15 @@ class CoachModel {
       'phone': phone,
       'email': email,
       'nationalId': nationalId,
+      'profilePictureBase64': profilePictureBase64,
       'educationLevel': educationLevel,
       'educationOther': educationOther,
       'fieldOfStudy': fieldOfStudy,
       'fieldOfStudyOther': fieldOfStudyOther,
       'yearsOfExperience': yearsOfExperience,
       'hasCertification': hasCertification,
-      'certificationUrl': certificationUrl,
+      'certificationBase64': certificationBase64,
+      'certificationFileName': certificationFileName,
       'region': region,
       'zone': zone,
       'username': username,
@@ -100,13 +106,15 @@ class CoachModel {
       phone: data['phone'] ?? '',
       email: data['email'] ?? '',
       nationalId: data['nationalId'] ?? '',
+      profilePictureBase64: data['profilePictureBase64'],
       educationLevel: data['educationLevel'] ?? '',
       educationOther: data['educationOther'],
       fieldOfStudy: data['fieldOfStudy'] ?? '',
       fieldOfStudyOther: data['fieldOfStudyOther'],
       yearsOfExperience: data['yearsOfExperience'] ?? 0,
       hasCertification: data['hasCertification'] ?? false,
-      certificationUrl: data['certificationUrl'],
+      certificationBase64: data['certificationBase64'],
+      certificationFileName: data['certificationFileName'],
       region: data['region'] ?? '',
       zone: data['zone'] ?? '',
       username: data['username'] ?? '',
@@ -127,13 +135,15 @@ class CoachModel {
     String? phone,
     String? email,
     String? nationalId,
+    String? profilePictureBase64,
     String? educationLevel,
     String? educationOther,
     String? fieldOfStudy,
     String? fieldOfStudyOther,
     int? yearsOfExperience,
     bool? hasCertification,
-    String? certificationUrl,
+    String? certificationBase64,
+    String? certificationFileName,
     String? region,
     String? zone,
     String? username,
@@ -152,13 +162,15 @@ class CoachModel {
       phone: phone ?? this.phone,
       email: email ?? this.email,
       nationalId: nationalId ?? this.nationalId,
+      profilePictureBase64: profilePictureBase64 ?? this.profilePictureBase64,
       educationLevel: educationLevel ?? this.educationLevel,
       educationOther: educationOther ?? this.educationOther,
       fieldOfStudy: fieldOfStudy ?? this.fieldOfStudy,
       fieldOfStudyOther: fieldOfStudyOther ?? this.fieldOfStudyOther,
       yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
       hasCertification: hasCertification ?? this.hasCertification,
-      certificationUrl: certificationUrl ?? this.certificationUrl,
+      certificationBase64: certificationBase64 ?? this.certificationBase64,
+      certificationFileName: certificationFileName ?? this.certificationFileName,
       region: region ?? this.region,
       zone: zone ?? this.zone,
       username: username ?? this.username,

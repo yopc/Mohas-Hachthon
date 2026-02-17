@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:mohas/screens/coach_list_screen.dart';
 import 'package:mohas/screens/register_coach_form.dart';
 import 'firebase_options.dart';
 
@@ -26,7 +27,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       // home: const SplashScreen(),
-      home: const RegisterCoachForm(),
+      // home: const RegisterCoachForm(),
+      home: const CoachListScreen(),
     );
   }
 }

@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../theme/app_theme2.dart';
 import '../models/coach_model.dart';
 import '../services/coach_service.dart';
+import '../utils/file_picker_helper.dart';
 
 class RegisterCoachForm extends StatefulWidget {
   const RegisterCoachForm({super.key});
@@ -16,19 +18,23 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
   int _currentStep = 0;
   bool _isLoading = false;
 
+  // Personal Information Controllers
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _nationalIdController = TextEditingController();
   
+  // Professional Information Controllers
   final _yearsOfExperienceController = TextEditingController();
   final _fieldOfStudyOtherController = TextEditingController();
   final _educationOtherController = TextEditingController();
   final _zoneController = TextEditingController();
   
+  // System Access Controllers
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  // Dropdown Values
   String? _selectedGender;
   String? _selectedEducationLevel;
   String? _selectedFieldOfStudy;
@@ -37,7 +43,11 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
   String? _selectedSupervisor;
   
   DateTime? _selectedDate;
+  
+  // File handling
   bool _hasCertification = false;
+  Map<String, String>? _profilePicture;
+  Map<String, String>? _certificationFile;
   
   final List<String> _genders = ['Male', 'Female', 'Prefer not to say', 'Other'];
   final List<String> _educationLevels = ['Diploma', 'Bachelor', 'Master', 'PhD', 'Other'];
@@ -183,6 +193,63 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
               ),
             ),
             const SizedBox(height: 20),
+            
+            // Profile Picture Section
+            Container(
+              margin: const EdgeInsets.only(bottom: 20),
+              child: Row(
+                children: [
+                  // Profile Picture Preview
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppTheme.primaryColor, width: 2),
+                      image: _profilePicture != null
+                          ? DecorationImage(
+                              image: MemoryImage(
+                                base64Decode(_profilePicture!['base64']!),
+                              ),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: _profilePicture == null
+                        ? const Icon(Icons.person, size: 40, color: Colors.grey)
+                        : null,
+                  ),
+                  const SizedBox(width: 20),
+                  // Upload Buttons
+                  Expanded(
+                    child: Column(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _pickProfilePicture,
+                          icon: const Icon(Icons.photo_library),
+                          label: const Text('Gallery'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            minimumSize: const Size(double.infinity, 40),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: () => _pickProfilePicture(fromCamera: true),
+                          icon: const Icon(Icons.camera_alt),
+                          label: const Text('Camera'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.primaryColor,
+                            side: const BorderSide(color: AppTheme.primaryColor),
+                            minimumSize: const Size(double.infinity, 40),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
             
             TextFormField(
               controller: _fullNameController,
@@ -371,43 +438,99 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
             ),
             const SizedBox(height: 16),
 
+            // Certification Section
             Container(
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey.shade200),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: CheckboxListTile(
-                title: const Text('Has Coaching Certification'),
-                value: _hasCertification,
-                onChanged: (value) => setState(() => _hasCertification = value ?? false),
-                controlAffinity: ListTileControlAffinity.leading,
-                secondary: Icon(
-                  Icons.verified_outlined,
-                  color: _hasCertification ? AppTheme.successColor : AppTheme.textSecondary,
-                ),
+              child: Column(
+                children: [
+                  CheckboxListTile(
+                    title: const Text('Has Coaching Certification'),
+                    value: _hasCertification,
+                    onChanged: (value) {
+                      setState(() {
+                        _hasCertification = value ?? false;
+                        if (!_hasCertification) {
+                          _certificationFile = null;
+                        }
+                      });
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                    secondary: Icon(
+                      Icons.verified_outlined,
+                      color: _hasCertification ? AppTheme.successColor : AppTheme.textSecondary,
+                    ),
+                  ),
+                  if (_hasCertification) ...[const Divider(),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          if (_certificationFile != null)
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _getFileIcon(_certificationFile!['fileName']!),
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _certificationFile!['fileName']!,
+                                          style: const TextStyle(fontWeight: FontWeight.w500),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          '${_formatFileSize(int.parse(_certificationFile!['fileSize']!))}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close, color: Colors.red),
+                                    onPressed: () {
+                                      setState(() {
+                                        _certificationFile = null;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            ElevatedButton.icon(
+                              onPressed: _pickCertificationFile,
+                              icon: const Icon(Icons.upload_file),
+                              label: const Text('Upload Certification Document'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.secondaryColor,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(double.infinity, 50),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (_hasCertification) ...[const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Upload certification document'),
-                      backgroundColor: AppTheme.successColor,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.upload_file),
-                label: const Text('Upload Certification'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.secondaryColor,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-              ),
-            ],
             const SizedBox(height: 16),
 
             DropdownButtonFormField<String>(
@@ -549,6 +672,36 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
     );
   }
 
+  Future<void> _pickProfilePicture({bool fromCamera = false}) async {
+    final result = await FilePickerHelper.pickImage(fromCamera: fromCamera);
+    if (result != null) {
+      setState(() {
+        _profilePicture = result;
+      });
+    }
+  }
+
+  Future<void> _pickCertificationFile() async {
+    final result = await FilePickerHelper.pickFile(
+      allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+    );
+    if (result != null) {
+      setState(() {
+        _certificationFile = result;
+      });
+    }
+  }
+
+  IconData _getFileIcon(String fileName) {
+    return FilePickerHelper.getFileIcon(fileName);
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
@@ -561,6 +714,7 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
           phone: _phoneController.text,
           email: _emailController.text,
           nationalId: _nationalIdController.text,
+          profilePictureBase64: _profilePicture?['base64'],
           educationLevel: _selectedEducationLevel ?? '',
           educationOther: _educationOtherController.text.isNotEmpty 
               ? _educationOtherController.text 
@@ -571,7 +725,8 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
               : null,
           yearsOfExperience: int.parse(_yearsOfExperienceController.text),
           hasCertification: _hasCertification,
-          certificationUrl: null,
+          certificationBase64: _certificationFile?['base64'],
+          certificationFileName: _certificationFile?['fileName'],
           region: _selectedRegion ?? '',
           zone: _zoneController.text,
           username: _usernameController.text,
