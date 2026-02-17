@@ -47,7 +47,7 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Session Details',
                           style: TextStyle(
                             fontSize: 18,
@@ -218,8 +218,8 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
                         ElevatedButton.icon(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Upload evidence'),
+                              const SnackBar(
+                                content: Text('Upload evidence'),
                                 backgroundColor: AppTheme.secondaryColor,
                                 behavior: SnackBarBehavior.floating,
                               ),
@@ -301,11 +301,11 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
+          content: const Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              const Text('Coaching session saved successfully!'),
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Coaching session saved successfully!'),
             ],
           ),
           backgroundColor: AppTheme.successColor,

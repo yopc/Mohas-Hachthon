@@ -252,7 +252,7 @@ class _EnterpriseRegistrationFormState extends State<EnterpriseRegistrationForm>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Business Information',
                 style: TextStyle(
                   fontSize: 18,
@@ -401,7 +401,7 @@ class _EnterpriseRegistrationFormState extends State<EnterpriseRegistrationForm>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Business Structure',
                 style: TextStyle(
                   fontSize: 18,
@@ -515,7 +515,7 @@ class _EnterpriseRegistrationFormState extends State<EnterpriseRegistrationForm>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Baseline Financial Information',
                     style: TextStyle(
                       fontSize: 18,
@@ -563,7 +563,7 @@ class _EnterpriseRegistrationFormState extends State<EnterpriseRegistrationForm>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        const Text(
                           'Estimated Profit:',
                           style: TextStyle(
                             fontSize: 16,
@@ -751,7 +751,7 @@ class _EnterpriseRegistrationFormState extends State<EnterpriseRegistrationForm>
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.notifications_active, color: AppTheme.warningColor),
+                            const Icon(Icons.notifications_active, color: AppTheme.warningColor),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Column(
@@ -763,7 +763,7 @@ class _EnterpriseRegistrationFormState extends State<EnterpriseRegistrationForm>
                                   ),
                                   Text(
                                     '${_nextPaymentDate!.day}/${_nextPaymentDate!.month}/${_nextPaymentDate!.year}',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.warningColor,
@@ -793,11 +793,11 @@ class _EnterpriseRegistrationFormState extends State<EnterpriseRegistrationForm>
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
+          content: const Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              const Text('Enterprise registered successfully!'),
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Enterprise registered successfully!'),
             ],
           ),
           backgroundColor: AppTheme.successColor,

@@ -117,11 +117,11 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return EnterprisesScreen(enterprises: _enterprises);
       case 2:
-        return AssessmentsScreen();
+        return const AssessmentsScreen();
       case 3:
-        return SessionsScreen();
+        return const SessionsScreen();
       case 4:
-        return ReportsScreen();
+        return const ReportsScreen();
       default:
         return _buildDashboard();
     }
@@ -156,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       backgroundColor: Colors.white,
                       child: Text(
                         _currentCoach.name[0],
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryColor,
@@ -409,7 +409,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
               color: AppTheme.textSecondary,
             ),
@@ -451,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
@@ -472,9 +472,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Container(
               padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.primaryColor,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
                 ),
@@ -489,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         backgroundColor: Colors.white,
                         child: Text(
                           _currentCoach.name[0],
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryColor,

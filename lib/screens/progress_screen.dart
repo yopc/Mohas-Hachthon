@@ -253,7 +253,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                         children: history.take(6).map((point) {
                           final index = history.indexOf(point);
                           final width = (MediaQuery.of(context).size.width - 72) / 6;
-                          return Container(
+                          return SizedBox(
                             width: width,
                             child: Column(
                               children: [
@@ -295,7 +295,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

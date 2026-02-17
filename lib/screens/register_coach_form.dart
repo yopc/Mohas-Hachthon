@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme2.dart';
+import '../models/coach_model.dart';
+import '../services/coach_service.dart';
 
 class RegisterCoachForm extends StatefulWidget {
   const RegisterCoachForm({super.key});
@@ -10,25 +12,23 @@ class RegisterCoachForm extends StatefulWidget {
 
 class _RegisterCoachFormState extends State<RegisterCoachForm> {
   final _formKey = GlobalKey<FormState>();
+  final _coachService = CoachService();
   int _currentStep = 0;
+  bool _isLoading = false;
 
-  // Personal Information Controllers
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _nationalIdController = TextEditingController();
   
-  // Professional Information Controllers
   final _yearsOfExperienceController = TextEditingController();
   final _fieldOfStudyOtherController = TextEditingController();
   final _educationOtherController = TextEditingController();
   final _zoneController = TextEditingController();
   
-  // System Access Controllers
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // Dropdown Values
   String? _selectedGender;
   String? _selectedEducationLevel;
   String? _selectedFieldOfStudy;
@@ -63,105 +63,107 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
       appBar: AppBar(
         title: const Text('Register New Coach'),
       ),
-      body: Container(
-        color: AppTheme.backgroundColor,
-        child: Form(
-          key: _formKey,
-          child: Stepper(
-            type: StepperType.horizontal,
-            currentStep: _currentStep,
-            onStepContinue: () {
-              if (_currentStep < 2) {
-                setState(() {
-                  _currentStep++;
-                });
-              }
-            },
-            onStepCancel: () {
-              if (_currentStep > 0) {
-                setState(() {
-                  _currentStep--;
-                });
-              }
-            },
-            onStepTapped: (step) {
-              setState(() {
-                _currentStep = step;
-              });
-            },
-            controlsBuilder: (context, details) {
-              return Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    if (_currentStep > 0)
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: details.onStepCancel,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.primaryColor,
-                            side: const BorderSide(color: AppTheme.primaryColor),
-                            minimumSize: const Size(double.infinity, 50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Container(
+              color: AppTheme.backgroundColor,
+              child: Form(
+                key: _formKey,
+                child: Stepper(
+                  type: StepperType.horizontal,
+                  currentStep: _currentStep,
+                  onStepContinue: () {
+                    if (_currentStep < 2) {
+                      setState(() {
+                        _currentStep++;
+                      });
+                    }
+                  },
+                  onStepCancel: () {
+                    if (_currentStep > 0) {
+                      setState(() {
+                        _currentStep--;
+                      });
+                    }
+                  },
+                  onStepTapped: (step) {
+                    setState(() {
+                      _currentStep = step;
+                    });
+                  },
+                  controlsBuilder: (context, details) {
+                    return Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          if (_currentStep > 0)
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: details.onStepCancel,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppTheme.primaryColor,
+                                  side: const BorderSide(color: AppTheme.primaryColor),
+                                  minimumSize: const Size(double.infinity, 50),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text('Previous'),
+                              ),
+                            ),
+                          if (_currentStep > 0) const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _currentStep == 2 ? _submitForm : details.onStepContinue,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                minimumSize: const Size(double.infinity, 50),
+                              ),
+                              child: Text(_currentStep == 2 ? 'Submit' : 'Next'),
                             ),
                           ),
-                          child: const Text('Previous'),
+                        ],
+                      ),
+                    );
+                  },
+                  steps: [
+                    Step(
+                      title: Text(
+                        'Personal Info',
+                        style: TextStyle(
+                          color: _currentStep >= 0 ? AppTheme.primaryColor : AppTheme.textSecondary,
                         ),
                       ),
-                    if (_currentStep > 0) const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: details.onStepContinue,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          minimumSize: const Size(double.infinity, 50),
+                      isActive: _currentStep >= 0,
+                      state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+                      content: _buildPersonalInfoStep(),
+                    ),
+                    Step(
+                      title: Text(
+                        'Professional',
+                        style: TextStyle(
+                          color: _currentStep >= 1 ? AppTheme.primaryColor : AppTheme.textSecondary,
                         ),
-                        child: Text(_currentStep == 2 ? 'Submit' : 'Next'),
                       ),
+                      isActive: _currentStep >= 1,
+                      state: _currentStep > 1 ? StepState.complete : StepState.indexed,
+                      content: _buildProfessionalInfoStep(),
+                    ),
+                    Step(
+                      title: Text(
+                        'System Access',
+                        style: TextStyle(
+                          color: _currentStep >= 2 ? AppTheme.primaryColor : AppTheme.textSecondary,
+                        ),
+                      ),
+                      isActive: _currentStep >= 2,
+                      state: _currentStep > 2 ? StepState.complete : StepState.indexed,
+                      content: _buildSystemAccessStep(),
                     ),
                   ],
                 ),
-              );
-            },
-            steps: [
-              Step(
-                title: Text(
-                  'Personal Info',
-                  style: TextStyle(
-                    color: _currentStep >= 0 ? AppTheme.primaryColor : AppTheme.textSecondary,
-                  ),
-                ),
-                isActive: _currentStep >= 0,
-                state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-                content: _buildPersonalInfoStep(),
               ),
-              Step(
-                title: Text(
-                  'Professional',
-                  style: TextStyle(
-                    color: _currentStep >= 1 ? AppTheme.primaryColor : AppTheme.textSecondary,
-                  ),
-                ),
-                isActive: _currentStep >= 1,
-                state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-                content: _buildProfessionalInfoStep(),
-              ),
-              Step(
-                title: Text(
-                  'System Access',
-                  style: TextStyle(
-                    color: _currentStep >= 2 ? AppTheme.primaryColor : AppTheme.textSecondary,
-                  ),
-                ),
-                isActive: _currentStep >= 2,
-                state: _currentStep > 2 ? StepState.complete : StepState.indexed,
-                content: _buildSystemAccessStep(),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
@@ -172,7 +174,7 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Personal Information',
               style: TextStyle(
                 fontSize: 18, 
@@ -297,7 +299,7 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Professional Information',
               style: TextStyle(
                 fontSize: 18, 
@@ -444,7 +446,7 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'System Access',
               style: TextStyle(
                 fontSize: 18, 
@@ -534,7 +536,10 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: ElevatedButton(
                 onPressed: _submitForm,
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.successColor),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.successColor,
+                  minimumSize: const Size(double.infinity, 50),
+                ),
                 child: const Text('Register Coach'),
               ),
             ),
@@ -544,22 +549,79 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
     );
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              const Text('Coach registered successfully!'),
-            ],
-          ),
-          backgroundColor: AppTheme.successColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      setState(() => _isLoading = true);
+
+      try {
+        final coach = CoachModel(
+          fullName: _fullNameController.text,
+          gender: _selectedGender,
+          dateOfBirth: _selectedDate,
+          phone: _phoneController.text,
+          email: _emailController.text,
+          nationalId: _nationalIdController.text,
+          educationLevel: _selectedEducationLevel ?? '',
+          educationOther: _educationOtherController.text.isNotEmpty 
+              ? _educationOtherController.text 
+              : null,
+          fieldOfStudy: _selectedFieldOfStudy ?? '',
+          fieldOfStudyOther: _fieldOfStudyOtherController.text.isNotEmpty 
+              ? _fieldOfStudyOtherController.text 
+              : null,
+          yearsOfExperience: int.parse(_yearsOfExperienceController.text),
+          hasCertification: _hasCertification,
+          certificationUrl: null,
+          region: _selectedRegion ?? '',
+          zone: _zoneController.text,
+          username: _usernameController.text,
+          password: _passwordController.text,
+          accountStatus: _selectedAccountStatus ?? 'Active',
+          assignedSupervisor: _selectedSupervisor ?? '',
+          securityId: null,
+        );
+
+        String coachId = await _coachService.registerCoach(coach);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Coach registered successfully! Coach ID: $coachId',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: AppTheme.successColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+          
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: AppTheme.errorColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
     }
   }
 

@@ -44,7 +44,7 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Sign in to continue coaching',
                 style: TextStyle(
                   fontSize: 16,
@@ -61,14 +61,14 @@ class LoginScreen extends StatelessWidget {
                     color: AppTheme.primaryColor.withOpacity(0.1),
                   ),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
                     Icon(
                       Icons.info_outline,
                       color: AppTheme.primaryColor,
                       size: 20,
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,7 +80,7 @@ class LoginScreen extends StatelessWidget {
                               color: AppTheme.primaryColor,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Text(
                             'Email: abebe.k@mesmer.et\nPassword: any password',
                             style: TextStyle(

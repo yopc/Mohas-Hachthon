@@ -235,7 +235,7 @@ class SignupScreen extends StatelessWidget {
                     onChanged: (value) {},
                     activeColor: AppTheme.primaryColor,
                   ),
-                  Expanded(
+                  const Expanded(
                     child: Text(
                       'I agree to the Terms of Service and Privacy Policy',
                       style: TextStyle(

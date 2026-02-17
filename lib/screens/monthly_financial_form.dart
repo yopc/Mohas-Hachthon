@@ -44,7 +44,7 @@ class _MonthlyFinancialFormState extends State<MonthlyFinancialForm> {
   double _totalExpenses = 0;
   double _profit = 0;
   double _profitGrowth = 0;
-  double _lastMonthProfit = 5000; // Example previous month profit
+  final double _lastMonthProfit = 5000; // Example previous month profit
 
   void _calculateTotals() {
     double rent = double.tryParse(_rentController.text) ?? 0;
@@ -119,10 +119,10 @@ class _MonthlyFinancialFormState extends State<MonthlyFinancialForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(Icons.trending_up, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   'Sales Information',
                   style: TextStyle(
@@ -208,10 +208,10 @@ class _MonthlyFinancialFormState extends State<MonthlyFinancialForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(Icons.trending_down, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   'Expenses (Detailed)',
                   style: TextStyle(
@@ -292,10 +292,10 @@ class _MonthlyFinancialFormState extends State<MonthlyFinancialForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(Icons.trending_up, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   'Investment',
                   style: TextStyle(
@@ -426,11 +426,11 @@ class _MonthlyFinancialFormState extends State<MonthlyFinancialForm> {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
+          content: const Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              const Text('Financial data submitted successfully!'),
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Financial data submitted successfully!'),
             ],
           ),
           backgroundColor: AppTheme.successColor,

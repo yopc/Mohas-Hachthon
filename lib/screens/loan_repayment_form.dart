@@ -20,10 +20,10 @@ class _LoanRepaymentFormState extends State<LoanRepaymentForm> {
   String? _otherPaymentMethod;
   
   // Loan Overview (example data)
-  double _totalLoan = 50000;
-  double _totalPaid = 15000;
+  final double _totalLoan = 50000;
+  final double _totalPaid = 15000;
   double _remainingBalance = 35000;
-  DateTime _nextDueDate = DateTime.now().add(const Duration(days: 15));
+  final DateTime _nextDueDate = DateTime.now().add(const Duration(days: 15));
   
   final List<String> _paymentMethods = [
     'Cash', 'Bank Transfer', 'Mobile Money', 'Other'
@@ -81,10 +81,10 @@ class _LoanRepaymentFormState extends State<LoanRepaymentForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(Icons.account_balance, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   'Loan Overview',
                   style: TextStyle(
@@ -137,7 +137,7 @@ class _LoanRepaymentFormState extends State<LoanRepaymentForm> {
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.w500,
             color: AppTheme.textSecondary,
           ),
@@ -161,10 +161,10 @@ class _LoanRepaymentFormState extends State<LoanRepaymentForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(Icons.payment, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   'Payment Entry',
                   style: TextStyle(
@@ -246,8 +246,8 @@ class _LoanRepaymentFormState extends State<LoanRepaymentForm> {
             ElevatedButton.icon(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Upload receipt'),
+                  const SnackBar(
+                    content: Text('Upload receipt'),
                     backgroundColor: AppTheme.secondaryColor,
                     behavior: SnackBarBehavior.floating,
                   ),
@@ -312,8 +312,8 @@ class _LoanRepaymentFormState extends State<LoanRepaymentForm> {
       
       if (paymentAmount > _remainingBalance + _totalPaid) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Payment amount cannot exceed remaining balance'),
+          const SnackBar(
+            content: Text('Payment amount cannot exceed remaining balance'),
             backgroundColor: AppTheme.errorColor,
             behavior: SnackBarBehavior.floating,
           ),
@@ -323,11 +323,11 @@ class _LoanRepaymentFormState extends State<LoanRepaymentForm> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
+          content: const Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              const Text('Payment recorded successfully!'),
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Payment recorded successfully!'),
             ],
           ),
           backgroundColor: AppTheme.successColor,

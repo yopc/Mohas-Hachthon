@@ -78,11 +78,11 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
                      _governanceItems.length;
     int completedItems = 0;
     
-    _financeItems.values.forEach((v) { if (v) completedItems++; });
-    _marketingItems.values.forEach((v) { if (v) completedItems++; });
-    _hrItems.values.forEach((v) { if (v) completedItems++; });
-    _operationsItems.values.forEach((v) { if (v) completedItems++; });
-    _governanceItems.values.forEach((v) { if (v) completedItems++; });
+    for (var v in _financeItems.values) { if (v) completedItems++; }
+    for (var v in _marketingItems.values) { if (v) completedItems++; }
+    for (var v in _hrItems.values) { if (v) completedItems++; }
+    for (var v in _operationsItems.values) { if (v) completedItems++; }
+    for (var v in _governanceItems.values) { if (v) completedItems++; }
     
     return completedItems / totalItems;
   }
@@ -109,7 +109,7 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
+                            const Text(
                               'Diagnosis Progress',
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
@@ -265,9 +265,9 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
             }),
             const SizedBox(height: 8),
             TextFormField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Other (specify)',
-                prefixIcon: const Icon(Icons.edit, color: AppTheme.primaryColor),
+                prefixIcon: Icon(Icons.edit, color: AppTheme.primaryColor),
               ),
               onChanged: onOtherChanged,
             ),
@@ -374,11 +374,11 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
     if (_formKey.currentState!.validate() && _followUpDate != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
+          content: const Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              const Text('Diagnosis submitted successfully!'),
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Diagnosis submitted successfully!'),
             ],
           ),
           backgroundColor: AppTheme.successColor,

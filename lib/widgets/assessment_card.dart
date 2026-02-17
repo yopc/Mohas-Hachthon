@@ -165,7 +165,7 @@ class AssessmentCard extends StatelessWidget {
                         ],
                       ),
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             ),

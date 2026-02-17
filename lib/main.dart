@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:mohas/screens/enterprise_registration_form.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:mohas/screens/register_coach_form.dart';
+import 'firebase_options.dart';
+
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MyApp());
 }
 
@@ -16,8 +25,8 @@ class MyApp extends StatelessWidget {
       title: 'MESMER Coaching',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      // home: const EnterpriseRegistrationForm()
-      home: const SplashScreen(),
+      // home: const SplashScreen(),
+      home: const RegisterCoachForm(),
     );
   }
 }
