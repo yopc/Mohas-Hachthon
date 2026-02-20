@@ -493,7 +493,7 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         Text(
-                                          '${_formatFileSize(int.parse(_certificationFile!['fileSize']!))}',
+                                          _formatFileSize(int.parse(_certificationFile!['fileSize']!)),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.grey.shade600,

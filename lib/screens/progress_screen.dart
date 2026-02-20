@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/seed_data.dart';
 import '../theme/app_theme.dart';
-import '../models/enterprise.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});

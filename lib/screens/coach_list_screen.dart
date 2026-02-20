@@ -79,15 +79,15 @@ class _CoachListScreenState extends State<CoachListScreen> {
                     children: [
                       Text(coach.email),
                       if (coach.hasCertification)
-                        Row(
+                        const Row(
                           children: [
                             Icon(
                               Icons.verified,
                               size: 16,
                               color: AppTheme.successColor,
                             ),
-                            const SizedBox(width: 4),
-                            const Text(
+                            SizedBox(width: 4),
+                            Text(
                               'Certified',
                               style: TextStyle(fontSize: 12),
                             ),

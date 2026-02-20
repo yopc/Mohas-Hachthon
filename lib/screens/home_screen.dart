@@ -5,7 +5,6 @@ import 'package:mohas/models/session.dart';
 import 'package:mohas/screens/assessments_screen.dart';
 import 'package:mohas/screens/login_screen.dart';
 import 'enterprises_screen.dart';
-import '../models/assessment.dart';
 import 'sessions_screen.dart';
 import 'progress_screen.dart';
 import 'reports_screen.dart';
