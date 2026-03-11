@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "750467078445",
+    "project_id": "moas-69c1b",
+    "storage_bucket": "moas-69c1b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:750467078445:android:cffc9190b1820662389ba4",
+        "android_client_info": {
+          "package_name": "com.example.mohas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUxhOXWh766h7uLKRNatpr6c6VWl13seY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
