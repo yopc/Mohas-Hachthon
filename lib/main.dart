@@ -6,7 +6,7 @@ import 'package:mohas/screens/home_screen.dart';
 import 'firebase_options.dart';
 
 import 'theme/app_theme2.dart';
-//  this is the main method of the entire project 
+//  this is the main method of the entire project moas
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
