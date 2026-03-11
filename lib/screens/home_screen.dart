@@ -11,7 +11,11 @@ import 'reports_screen.dart';
 import 'profile_screen.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../data/seed_data.dart';
+<<<<<<< HEAD
 import '../theme/app_theme2.dart';
+=======
+import '../theme/app_theme.dart';
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 import '../widgets/enterprise_card.dart';
 import '../widgets/session_card.dart';
 

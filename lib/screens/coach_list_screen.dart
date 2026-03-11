@@ -1,8 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import '../models/coach_model.dart'; // Changed from 'coach.dart' to 'coach_model.dart'
 import '../services/coach_service.dart';
 import '../services/security_service.dart';
+=======
+import '../services/coach_service.dart';
+import '../services/security_service.dart';
+import '../models/coach_model.dart';
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 import '../models/security_model.dart';
 import '../theme/app_theme2.dart';
 import '../utils/file_picker_helper.dart';
@@ -24,7 +30,11 @@ class _CoachListScreenState extends State<CoachListScreen> {
       appBar: AppBar(
         title: const Text('Coaches List'),
       ),
+<<<<<<< HEAD
       body: StreamBuilder<List<CoachModel>>( // Changed from Coach to CoachModel
+=======
+      body: StreamBuilder<List<CoachModel>>(
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
         stream: _coachService.getCoaches(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -113,7 +123,11 @@ class _CoachListScreenState extends State<CoachListScreen> {
     );
   }
 
+<<<<<<< HEAD
   void _showCoachDetails(CoachModel coach) async { // Changed from Coach to CoachModel
+=======
+  void _showCoachDetails(CoachModel coach) async {
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
     final security = coach.securityId != null
         ? await _securityService.getSecurityById(coach.securityId!)
         : null;
@@ -143,6 +157,10 @@ class _CoachListScreenState extends State<CoachListScreen> {
             children: [
               _buildDetailRow('Email', coach.email),
               _buildDetailRow('Phone', coach.phone),
+<<<<<<< HEAD
+=======
+              _buildDetailRow('Username', coach.username),
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
               _buildDetailRow('Status', coach.accountStatus),
               _buildDetailRow('Region', coach.region),
               _buildDetailRow('Zone', coach.zone),
@@ -150,8 +168,12 @@ class _CoachListScreenState extends State<CoachListScreen> {
               _buildDetailRow('Field of Study', coach.fieldOfStudy),
               _buildDetailRow('Experience', '${coach.yearsOfExperience} years'),
               
+<<<<<<< HEAD
               if (coach.hasCertification && coach.certificationBase64 != null) ...[
                 const Divider(),
+=======
+              if (coach.hasCertification && coach.certificationBase64 != null) ...[const Divider(),
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
                 const Text(
                   'Certification',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -195,8 +217,12 @@ class _CoachListScreenState extends State<CoachListScreen> {
               ],
               
               _buildDetailRow('Security ID', coach.securityId ?? 'Not set'),
+<<<<<<< HEAD
               if (security != null) ...[
                 const Divider(),
+=======
+              if (security != null) ...[const Divider(),
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
                 const Text(
                   'Security Settings',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -222,7 +248,11 @@ class _CoachListScreenState extends State<CoachListScreen> {
     );
   }
 
+<<<<<<< HEAD
   void _viewCertification(CoachModel coach) { // Changed from Coach to CoachModel
+=======
+  void _viewCertification(CoachModel coach) {
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
     if (coach.certificationBase64 == null) return;
     
     // Check if it's an image or document

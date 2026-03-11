@@ -30,7 +30,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+<<<<<<< HEAD
   
+=======
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -65,6 +68,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   # assets:
+<<<<<<< HEAD
     # - images/a_dot_burr.jpeg
     # - images/a_dot_ham.jpeg
   assets:
@@ -89,6 +93,10 @@ flutter:
         - asset: assets/fonts/Roboto/static/Roboto-Regular.ttf  # Adjust path as needed
           weight: 400
     
+=======
+  #   - images/a_dot_burr.jpeg
+  #   - images/a_dot_ham.jpeg
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -102,6 +110,7 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   # fonts:
+<<<<<<< HEAD
   #   # - family: Schyler
   #     # fonts:
   #     #   - asset: fonts/Schyler-Regular.ttf
@@ -126,6 +135,14 @@ flutter:
     #     - asset: assets/fonts/Roboto-Bold.ttf
     #       weight: 700
     
+=======
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
   #     fonts:
   #       - asset: fonts/TrajanPro.ttf
   #       - asset: fonts/TrajanPro_Bold.ttf

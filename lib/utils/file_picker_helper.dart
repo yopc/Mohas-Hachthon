@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // import 'dart:io';
 // import 'dart:convert';
 // import 'dart:typed_data';
@@ -105,6 +106,8 @@
 // }
 
 
+=======
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 // lib/utils/file_picker_helper.dart
 import 'dart:io';
 import 'dart:convert';
@@ -130,9 +133,12 @@ class FilePickerHelper {
         List<int> imageBytes = await imageFile.readAsBytes();
         String base64Image = base64Encode(imageBytes);
         
+<<<<<<< HEAD
         // Debug print to verify we have data
         debugPrint('Image picked: ${image.name}, size: ${imageBytes.length} bytes');
         
+=======
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
         return {
           'base64': base64Image,
           'fileName': image.name,
@@ -155,16 +161,22 @@ class FilePickerHelper {
         type: FileType.custom,
         allowedExtensions: allowedExtensions ?? ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
         allowMultiple: false,
+<<<<<<< HEAD
         withData: true, // IMPORTANT: This ensures we get the bytes directly
+=======
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
       );
       
       if (result != null) {
         PlatformFile file = result.files.first;
         
+<<<<<<< HEAD
         // Debug print to verify we have data
         debugPrint('File picked: ${file.name}, size: ${file.size} bytes');
         
         // FilePicker now gives us bytes directly with withData: true
+=======
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
         if (file.bytes != null) {
           String base64File = base64Encode(file.bytes!);
           return {
@@ -173,6 +185,19 @@ class FilePickerHelper {
             'fileSize': file.size.toString(),
             'fileType': file.extension ?? 'unknown',
           };
+<<<<<<< HEAD
+=======
+        } else if (file.path != null) {
+          File fileFromPath = File(file.path!);
+          List<int> fileBytes = await fileFromPath.readAsBytes();
+          String base64File = base64Encode(fileBytes);
+          return {
+            'base64': base64File,
+            'fileName': file.name,
+            'fileSize': file.size.toString(),
+            'fileType': file.extension ?? 'unknown',
+          };
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
         }
       }
       return null;
@@ -226,7 +251,11 @@ class FilePickerHelper {
     }
   }
 
+<<<<<<< HEAD
   // Get file extension from filename
+=======
+  // Get file extension from base64 or filename
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
   static String getFileExtension(String fileName) {
     return fileName.split('.').last.toLowerCase();
   }

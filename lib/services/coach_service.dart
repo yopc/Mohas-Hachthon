@@ -8,6 +8,7 @@ class CoachService {
   final SecurityService _securityService = SecurityService();
   final String collectionName = 'coaches';
 
+<<<<<<< HEAD
  Future<String> registerCoach(CoachModel coach) async {
   try {
     // Check if email already exists
@@ -39,6 +40,18 @@ class CoachService {
       final batch = _firestore.batch();
       
       // Check if email already exists
+=======
+  Future<String> registerCoach(CoachModel coach) async {
+    try {
+      final usernameQuery = await _firestore
+          .collection(collectionName)
+          .where('username', isEqualTo: coach.username)
+          .get();
+      
+      if (usernameQuery.docs.isNotEmpty) {
+        throw Exception('Username already exists');
+      }
+
       final emailQuery = await _firestore
           .collection(collectionName)
           .where('email', isEqualTo: coach.email)
@@ -48,6 +61,40 @@ class CoachService {
         throw Exception('Email already exists');
       }
 
+      DocumentReference docRef = await _firestore
+          .collection(collectionName)
+          .add(coach.toMap());
+      
+      return docRef.id;
+    } catch (e) {
+      throw Exception('Failed to register coach: $e');
+    }
+  }
+
+  Future<Map<String, String>> registerCoachWithSecurity(CoachModel coach) async {
+    try {
+      final batch = _firestore.batch();
+      
+      final usernameQuery = await _firestore
+          .collection(collectionName)
+          .where('username', isEqualTo: coach.username)
+          .get();
+      
+      if (usernameQuery.docs.isNotEmpty) {
+        throw Exception('Username already exists');
+      }
+
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
+      final emailQuery = await _firestore
+          .collection(collectionName)
+          .where('email', isEqualTo: coach.email)
+          .get();
+      
+      if (emailQuery.docs.isNotEmpty) {
+        throw Exception('Email already exists');
+      }
+
+<<<<<<< HEAD
       // Create coach document
       final coachRef = _firestore.collection(collectionName).doc();
       
@@ -83,6 +130,12 @@ class CoachService {
       batch.set(coachRef, coachWithId.toMap());
 
       // Create security record
+=======
+      final coachRef = _firestore.collection(collectionName).doc();
+      
+      batch.set(coachRef, coach.copyWith(id: coachRef.id).toMap());
+
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
       final securityModel = SecurityModel(
         coachId: coachRef.id,
         registeredDevice: null,
@@ -100,9 +153,14 @@ class CoachService {
       );
 
       final securityRef = _firestore.collection('security').doc();
+<<<<<<< HEAD
       batch.set(securityRef, securityModel.toMap());
 
       // Update coach with securityId
+=======
+      batch.set(securityRef, securityModel.copyWith(id: securityRef.id).toMap());
+
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
       batch.update(coachRef, {'securityId': securityRef.id});
 
       await batch.commit();
@@ -128,6 +186,7 @@ class CoachService {
         });
   }
 
+<<<<<<< HEAD
   Stream<List<CoachModel>> getActiveCoaches() {
     return _firestore
         .collection(collectionName)
@@ -141,6 +200,8 @@ class CoachService {
         });
   }
 
+=======
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
   Future<CoachModel?> getCoachById(String coachId) async {
     try {
       DocumentSnapshot doc = await _firestore
@@ -164,7 +225,11 @@ class CoachService {
 
       SecurityModel? security;
       if (coach.securityId != null) {
+<<<<<<< HEAD
         security = await _securityService.getSecurityById(coach.securityId!);
+=======
+        security = await _securityService.getSecurityByCoachId(coachId);
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
       }
 
       return {
@@ -187,6 +252,7 @@ class CoachService {
       throw Exception('Failed to update coach: $e');
     }
   }
+<<<<<<< HEAD
 
   Future<void> deactivateCoach(String coachId) async {
     try {
@@ -198,4 +264,6 @@ class CoachService {
       throw Exception('Failed to deactivate coach: $e');
     }
   }
+=======
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 }

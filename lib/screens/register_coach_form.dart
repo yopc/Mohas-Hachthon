@@ -29,6 +29,13 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
   final _fieldOfStudyOtherController = TextEditingController();
   final _educationOtherController = TextEditingController();
   final _zoneController = TextEditingController();
+<<<<<<< HEAD
+=======
+  
+  // System Access Controllers
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 
   // Dropdown Values
   String? _selectedGender;
@@ -45,7 +52,11 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
   Map<String, String>? _profilePicture;
   Map<String, String>? _certificationFile;
   
+<<<<<<< HEAD
   final List<String> _genders = ['Male', 'Female'];
+=======
+  final List<String> _genders = ['Male', 'Female', 'Prefer not to say', 'Other'];
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
   final List<String> _educationLevels = ['Diploma', 'Bachelor', 'Master', 'PhD', 'Other'];
   final List<String> _fieldsOfStudy = [
     'Computer Science', 'Business', 'Economics', 
@@ -265,7 +276,11 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
               value: _selectedGender,
               decoration: const InputDecoration(
                 labelText: 'Gender',
+<<<<<<< HEAD
                 prefixIcon: Icon(Icons.person, color: AppTheme.primaryColor),
+=======
+                prefixIcon: Icon(Icons.transgender, color: AppTheme.primaryColor),
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
               ),
               items: _genders.map((gender) {
                 return DropdownMenuItem(value: gender, child: Text(gender));
@@ -273,8 +288,12 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
               onChanged: (value) => setState(() => _selectedGender = value),
               validator: (value) => value == null ? 'Gender is required' : null,
             ),
+<<<<<<< HEAD
             if (_selectedGender == 'Other') ...[
               const SizedBox(height: 8),
+=======
+            if (_selectedGender == 'Other') ...[const SizedBox(height: 8),
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
               TextFormField(
                 decoration: const InputDecoration(
                   labelText: 'Specify Gender',
@@ -385,8 +404,12 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
               onChanged: (value) => setState(() => _selectedEducationLevel = value),
               validator: (value) => value == null ? 'Education level is required' : null,
             ),
+<<<<<<< HEAD
             if (_selectedEducationLevel == 'Other') ...[
               const SizedBox(height: 8),
+=======
+            if (_selectedEducationLevel == 'Other') ...[const SizedBox(height: 8),
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
               TextFormField(
                 controller: _educationOtherController,
                 decoration: const InputDecoration(
@@ -409,8 +432,12 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
               onChanged: (value) => setState(() => _selectedFieldOfStudy = value),
               validator: (value) => value == null ? 'Field of study is required' : null,
             ),
+<<<<<<< HEAD
             if (_selectedFieldOfStudy == 'Other') ...[
               const SizedBox(height: 8),
+=======
+            if (_selectedFieldOfStudy == 'Other') ...[const SizedBox(height: 8),
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
               TextFormField(
                 controller: _fieldOfStudyOtherController,
                 decoration: const InputDecoration(
@@ -462,8 +489,12 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
                       color: _hasCertification ? AppTheme.successColor : AppTheme.textSecondary,
                     ),
                   ),
+<<<<<<< HEAD
                   if (_hasCertification) ...[
                     const Divider(),
+=======
+                  if (_hasCertification) ...[const Divider(),
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -579,6 +610,40 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
             ),
             const SizedBox(height: 20),
 
+<<<<<<< HEAD
+=======
+            TextFormField(
+              controller: _usernameController,
+              decoration: const InputDecoration(
+                labelText: 'Username',
+                prefixIcon: Icon(Icons.person_outline, color: AppTheme.primaryColor),
+                hintText: 'Choose a username',
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Username is required';
+                if (value.length < 4) return 'Username must be at least 4 characters';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            TextFormField(
+              controller: _passwordController,
+              decoration: const InputDecoration(
+                labelText: 'Temporary Password',
+                prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor),
+                hintText: 'Set temporary password',
+              ),
+              obscureText: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Password is required';
+                if (value.length < 6) return 'Password must be at least 6 characters';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
             DropdownButtonFormField<String>(
               value: _selectedAccountStatus,
               decoration: const InputDecoration(
@@ -591,8 +656,12 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
                   child: Row(
                     children: [
                       Container(
+<<<<<<< HEAD
                         width: 8, 
                         height: 8,
+=======
+                        width: 8, height: 8,
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: status == 'Active' ? AppTheme.successColor : AppTheme.errorColor,
@@ -622,6 +691,7 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
               validator: (value) => value == null ? 'Supervisor is required' : null,
             ),
             
+<<<<<<< HEAD
             const SizedBox(height: 16),
 
             // Info message about invitation email
@@ -645,6 +715,8 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
               ),
             ),
             
+=======
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
             const SizedBox(height: 24),
             
             Container(
@@ -656,7 +728,11 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
                   backgroundColor: AppTheme.successColor,
                   minimumSize: const Size(double.infinity, 50),
                 ),
+<<<<<<< HEAD
                 child: const Text('Send Invitation & Register'),
+=======
+                child: const Text('Register Coach'),
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
               ),
             ),
           ],
@@ -695,6 +771,7 @@ class _RegisterCoachFormState extends State<RegisterCoachForm> {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
+<<<<<<< HEAD
 Future<void> _submitForm() async {
   if (_formKey.currentState!.validate()) {
     setState(() => _isLoading = true);
@@ -780,6 +857,86 @@ Future<void> _submitForm() async {
   }
 }
  
+=======
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+
+      try {
+        final coach = CoachModel(
+          fullName: _fullNameController.text,
+          gender: _selectedGender,
+          dateOfBirth: _selectedDate,
+          phone: _phoneController.text,
+          email: _emailController.text,
+          nationalId: _nationalIdController.text,
+          profilePictureBase64: _profilePicture?['base64'],
+          educationLevel: _selectedEducationLevel ?? '',
+          educationOther: _educationOtherController.text.isNotEmpty 
+              ? _educationOtherController.text 
+              : null,
+          fieldOfStudy: _selectedFieldOfStudy ?? '',
+          fieldOfStudyOther: _fieldOfStudyOtherController.text.isNotEmpty 
+              ? _fieldOfStudyOtherController.text 
+              : null,
+          yearsOfExperience: int.parse(_yearsOfExperienceController.text),
+          hasCertification: _hasCertification,
+          certificationBase64: _certificationFile?['base64'],
+          certificationFileName: _certificationFile?['fileName'],
+          region: _selectedRegion ?? '',
+          zone: _zoneController.text,
+          username: _usernameController.text,
+          password: _passwordController.text,
+          accountStatus: _selectedAccountStatus ?? 'Active',
+          assignedSupervisor: _selectedSupervisor ?? '',
+          securityId: null,
+        );
+
+        String coachId = await _coachService.registerCoach(coach);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Coach registered successfully! Coach ID: $coachId',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: AppTheme.successColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+          
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: AppTheme.errorColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
   @override
   void dispose() {
     _fullNameController.dispose();
@@ -790,6 +947,11 @@ Future<void> _submitForm() async {
     _fieldOfStudyOtherController.dispose();
     _educationOtherController.dispose();
     _zoneController.dispose();
+<<<<<<< HEAD
+=======
+    _usernameController.dispose();
+    _passwordController.dispose();
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
     super.dispose();
   }
 }

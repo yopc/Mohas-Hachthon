@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mohas/screens/enterprise_registration_form.dart';
 import '../models/enterprise.dart';
+<<<<<<< HEAD
 import '../theme/app_theme2.dart';
+=======
+import '../theme/app_theme.dart';
+>>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 import '../widgets/enterprise_card.dart';
 
 class EnterprisesScreen extends StatefulWidget {
