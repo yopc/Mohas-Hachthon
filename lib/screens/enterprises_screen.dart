@@ -145,11 +145,14 @@ class _EnterprisesScreenState extends State<EnterprisesScreen> {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const EnterpriseRegistrationForm()),
             );
+            if (result == true && mounted) {
+              // Refresh handled by provider
+            }
           },
           backgroundColor: AppTheme.primaryColor,
           child: const Icon(Icons.add),

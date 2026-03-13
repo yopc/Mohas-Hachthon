@@ -13,65 +13,72 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _nationalIdController = TextEditingController();
+  final _educationLevelController = TextEditingController();
+  final _educationOtherController = TextEditingController();
+  final _fieldOfStudyController = TextEditingController();
+  final _fieldOfStudyOtherController = TextEditingController();
+  final _yearsOfExperienceController = TextEditingController();
+  final _regionController = TextEditingController();
+  final _zoneController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _certificationUrlController = TextEditingController();
 
-  final List<String> _regions = [
-    'Addis Ababa - Bole',
-    'Addis Ababa - Kirkos',
-    'Addis Ababa - Piassa',
-    'Oromia - Bishoftu',
-    'Oromia - Sebeta',
-    'Amhara - Bahir Dar',
-    'Tigray - Mekelle',
-  ];
-  
-  String? _selectedRegion;
+  String? _selectedGender;
+  DateTime? _selectedDateOfBirth;
+  bool _hasCertification = false;
 
-  final List<String> _specializations = [
-    'Finance',
-    'Marketing',
-    'Operations',
-    'HR',
-    'Business Planning',
-    'Quality Control',
-  ];
-  
-  final List<String> _selectedSpecializations = [];
+  final List<String> _genders = ['Male', 'Female', 'Other'];
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _fullNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _nationalIdController.dispose();
+    _educationLevelController.dispose();
+    _educationOtherController.dispose();
+    _fieldOfStudyController.dispose();
+    _fieldOfStudyOtherController.dispose();
+    _yearsOfExperienceController.dispose();
+    _regionController.dispose();
+    _zoneController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _certificationUrlController.dispose();
     super.dispose();
   }
 
   Future<void> _handleSignUp() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedRegion == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a region'),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
-
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       
       Map<String, dynamic> userData = {
-        'fullName': _nameController.text.trim(),
+        'fullName': _fullNameController.text.trim(),
+        'gender': _selectedGender,
+        'dateOfBirth': _selectedDateOfBirth?.toIso8601String(),
         'phone': _phoneController.text.trim(),
-        'region': _selectedRegion,
-        'specializations': _selectedSpecializations,
+        'email': _emailController.text.trim(),
+        'nationalId': _nationalIdController.text.trim(),
+        'educationLevel': _educationLevelController.text.trim(),
+        'educationOther': _educationOtherController.text.trim().isEmpty ? null : _educationOtherController.text.trim(),
+        'fieldOfStudy': _fieldOfStudyController.text.trim(),
+        'fieldOfStudyOther': _fieldOfStudyOtherController.text.trim().isEmpty ? null : _fieldOfStudyOtherController.text.trim(),
+        'yearsOfExperience': int.tryParse(_yearsOfExperienceController.text.trim()) ?? 0,
+        'hasCertification': _hasCertification,
+        'certificationUrl': _hasCertification ? _certificationUrlController.text.trim() : null,
+        'region': _regionController.text.trim(),
+        'zone': _zoneController.text.trim(),
+        'username': _usernameController.text.trim(),
+        'password': _passwordController.text.trim(),
+        'supervisorId': 'default',
+        'supervisorName': 'Default Supervisor',
       };
 
       bool success = await authProvider.signUpWithEmail(
@@ -159,15 +166,58 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _nameController,
+                    controller: _fullNameController,
                     decoration: const InputDecoration(
                       hintText: 'Full Name',
                       prefixIcon: Icon(Icons.person_outline),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Full name is required';
-                      return null;
+                    validator: (value) => value == null || value.isEmpty ? 'Full name is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedGender,
+                    decoration: const InputDecoration(
+                      hintText: 'Gender',
+                      prefixIcon: Icon(Icons.people),
+                    ),
+                    items: _genders.map((gender) {
+                      return DropdownMenuItem(value: gender, child: Text(gender));
+                    }).toList(),
+                    onChanged: (value) => setState(() => _selectedGender = value),
+                    validator: (value) => value == null ? 'Gender is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime(2000),
+                        firstDate: DateTime(1950),
+                        lastDate: DateTime.now(),
+                      );
+                      if (date != null) setState(() => _selectedDateOfBirth = date);
                     },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        hintText: 'Date of Birth',
+                        prefixIcon: Icon(Icons.calendar_today),
+                      ),
+                      child: Text(
+                        _selectedDateOfBirth != null
+                            ? '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}'
+                            : 'Select date of birth',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: const InputDecoration(
+                      hintText: 'Phone Number',
+                      prefixIcon: Icon(Icons.phone_outlined),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) => value == null || value.isEmpty ? 'Phone number is required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -187,16 +237,12 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _phoneController,
+                    controller: _nationalIdController,
                     decoration: const InputDecoration(
-                      hintText: 'Phone Number',
-                      prefixIcon: Icon(Icons.phone_outlined),
+                      hintText: 'National ID',
+                      prefixIcon: Icon(Icons.badge),
                     ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Phone number is required';
-                      return null;
-                    },
+                    validator: (value) => value == null || value.isEmpty ? 'National ID is required' : null,
                   ),
                   const SizedBox(height: 24),
                   const Text(
@@ -208,90 +254,125 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
+                  TextFormField(
+                    controller: _educationLevelController,
+                    decoration: const InputDecoration(
+                      hintText: 'Education Level',
+                      prefixIcon: Icon(Icons.school),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        hint: const Text('Select Region'),
-                        value: _selectedRegion,
-                        isExpanded: true,
-                        icon: const Icon(Icons.arrow_drop_down),
-                        items: _regions.map((region) {
-                          return DropdownMenuItem(
-                            value: region,
-                            child: Text(region),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedRegion = value;
-                          });
-                        },
-                      ),
+                    validator: (value) => value == null || value.isEmpty ? 'Education level is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _educationOtherController,
+                    decoration: const InputDecoration(
+                      hintText: 'Education Other (specify)',
+                      prefixIcon: Icon(Icons.edit),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
+                  TextFormField(
+                    controller: _fieldOfStudyController,
+                    decoration: const InputDecoration(
+                      hintText: 'Field of Study',
+                      prefixIcon: Icon(Icons.science),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Specializations',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _specializations.map((spec) {
-                            final isSelected = _selectedSpecializations.contains(spec);
-                            return FilterChip(
-                              label: Text(spec),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                setState(() {
-                                  if (selected) {
-                                    _selectedSpecializations.add(spec);
-                                  } else {
-                                    _selectedSpecializations.remove(spec);
-                                  }
-                                });
-                              },
-                              backgroundColor: Colors.grey.shade50,
-                              selectedColor: AppTheme.primaryColor.withOpacity(0.1),
-                              checkmarkColor: AppTheme.primaryColor,
-                              labelStyle: TextStyle(
-                                color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
+                    validator: (value) => value == null || value.isEmpty ? 'Field of study is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _fieldOfStudyOtherController,
+                    decoration: const InputDecoration(
+                      hintText: 'Field of Study Other (specify)',
+                      prefixIcon: Icon(Icons.edit),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _yearsOfExperienceController,
+                    decoration: const InputDecoration(
+                      hintText: 'Years of Experience',
+                      prefixIcon: Icon(Icons.work),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return 'Years of experience is required';
+                      if (int.tryParse(value) == null) return 'Enter a valid number';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _hasCertification,
+                        onChanged: (value) => setState(() => _hasCertification = value ?? false),
+                        activeColor: AppTheme.primaryColor,
+                      ),
+                      const Expanded(
+                        child: Text(
+                          'Has Professional Certification',
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_hasCertification) ...[                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _certificationUrlController,
+                      decoration: const InputDecoration(
+                        hintText: 'Certification URL',
+                        prefixIcon: Icon(Icons.link),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   const Text(
-                    'Security',
+                    'Location Information',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textPrimary,
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _regionController,
+                    decoration: const InputDecoration(
+                      hintText: 'Region',
+                      prefixIcon: Icon(Icons.location_on),
+                    ),
+                    validator: (value) => value == null || value.isEmpty ? 'Region is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _zoneController,
+                    decoration: const InputDecoration(
+                      hintText: 'Zone',
+                      prefixIcon: Icon(Icons.location_city),
+                    ),
+                    validator: (value) => value == null || value.isEmpty ? 'Zone is required' : null,
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Account Information',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _usernameController,
+                    decoration: const InputDecoration(
+                      hintText: 'Username',
+                      prefixIcon: Icon(Icons.person),
+                    ),
+                    validator: (value) => value == null || value.isEmpty ? 'Username is required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(

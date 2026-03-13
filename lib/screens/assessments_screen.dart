@@ -1,148 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-// import '../providers/assessment_provider.dart';
-// import 'baseline_diagnosis_form.dart';
-// import '../theme/app_theme2.dart';
-// import '../widgets/assessment_card.dart';
-// import '../widgets/loading_overlay.dart';
-
-// class AssessmentsScreen extends StatefulWidget {
-//   const AssessmentsScreen({super.key});
-
-//   @override
-//   State<AssessmentsScreen> createState() => _AssessmentsScreenState();
-// }
-
-// class _AssessmentsScreenState extends State<AssessmentsScreen> {
-//   String _selectedFilter = 'All';
-//   final List<String> _filters = ['All', 'Baseline', 'Quarterly', 'Follow-up'];
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final assessmentProvider = Provider.of<AssessmentProvider>(context);
-    
-//     List filteredAssessments = assessmentProvider.assessments.where((a) {
-//       if (_selectedFilter == 'All') return true;
-//       return a.type == _selectedFilter;
-//     }).toList();
-
-//     return LoadingOverlay(
-//       isLoading: assessmentProvider.isLoading,
-//       child: Scaffold(
-//         backgroundColor: AppTheme.backgroundColor,
-//         body: Column(
-//           children: [
-//             Container(
-//               padding: const EdgeInsets.all(20),
-//               color: Colors.white,
-//               child: Column(
-//                 children: [
-//                   Row(
-//                     children: [
-//                       Expanded(
-//                         child: Container(
-//                           decoration: BoxDecoration(
-//                             color: AppTheme.backgroundColor,
-//                             borderRadius: BorderRadius.circular(12),
-//                           ),
-//                           child: const TextField(
-//                             decoration: InputDecoration(
-//                               hintText: 'Search assessments...',
-//                               prefixIcon: Icon(Icons.search),
-//                               border: InputBorder.none,
-//                               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-//                             ),
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   const SizedBox(height: 12),
-//                   SingleChildScrollView(
-//                     scrollDirection: Axis.horizontal,
-//                     child: Row(
-//                       children: _filters.map((filter) {
-//                         final isSelected = _selectedFilter == filter;
-//                         return Padding(
-//                           padding: const EdgeInsets.only(right: 8),
-//                           child: FilterChip(
-//                             label: Text(filter),
-//                             selected: isSelected,
-//                             onSelected: (selected) {
-//                               setState(() {
-//                                 _selectedFilter = filter;
-//                               });
-//                             },
-//                             backgroundColor: Colors.grey.shade50,
-//                             selectedColor: AppTheme.primaryColor.withOpacity(0.1),
-//                             checkmarkColor: AppTheme.primaryColor,
-//                             labelStyle: TextStyle(
-//                               color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
-//                               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-//                             ),
-//                           ),
-//                         );
-//                       }).toList(),
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//             Expanded(
-//               child: filteredAssessments.isEmpty
-//                   ? Center(
-//                       child: Column(
-//                         mainAxisAlignment: MainAxisAlignment.center,
-//                         children: [
-//                           Icon(
-//                             Icons.assignment_outlined,
-//                             size: 64,
-//                             color: Colors.grey.shade400,
-//                           ),
-//                           const SizedBox(height: 16),
-//                           Text(
-//                             'No assessments found',
-//                             style: TextStyle(
-//                               fontSize: 18,
-//                               color: Colors.grey.shade600,
-//                               fontWeight: FontWeight.w600,
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                     )
-//                   : ListView.builder(
-//                       padding: const EdgeInsets.all(20),
-//                       itemCount: filteredAssessments.length,
-//                       itemBuilder: (context, index) {
-//                         return Padding(
-//                           padding: const EdgeInsets.only(bottom: 12),
-//                           child: AssessmentCard(
-//                             assessment: filteredAssessments[index],
-//                             onTap: () {},
-//                           ),
-//                         );
-//                       },
-//                     ),
-//             ),
-//           ],
-//         ),
-//         floatingActionButton: FloatingActionButton(
-//           onPressed: () {
-//             Navigator.push(
-//               context,
-//               MaterialPageRoute(builder: (context) => const BaselineDiagnosisForm()),
-//             );
-//           },
-//           backgroundColor: AppTheme.primaryColor,
-//           child: const Icon(Icons.add),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/assessment_provider.dart';
@@ -177,7 +32,6 @@ class _AssessmentsScreenState extends State<AssessmentsScreen> with AutomaticKee
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Refresh when app returns to foreground
       _refreshData();
     }
   }
@@ -213,7 +67,6 @@ class _AssessmentsScreenState extends State<AssessmentsScreen> with AutomaticKee
     
     final assessmentProvider = Provider.of<AssessmentProvider>(context);
     
-    // Debug print to console
     print('📱 AssessmentsScreen build - Count: ${assessmentProvider.assessments.length}, Loading: ${assessmentProvider.isLoading}');
     
     List filteredAssessments = assessmentProvider.assessments.where((a) {
@@ -369,9 +222,7 @@ class _AssessmentsScreenState extends State<AssessmentsScreen> with AutomaticKee
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: AssessmentCard(
                                   assessment: filteredAssessments[index],
-                                  onTap: () {
-                                    // Handle assessment tap
-                                  },
+                                  onTap: () {},
                                 ),
                               );
                             },

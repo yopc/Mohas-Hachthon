@@ -116,8 +116,7 @@ class SessionCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      if (session.photoCount > 0) ...[
-                        Icon(
+                      if (session.photoCount > 0) ...[                        Icon(
                           Icons.photo_camera,
                           size: 12,
                           color: Colors.grey.shade500,

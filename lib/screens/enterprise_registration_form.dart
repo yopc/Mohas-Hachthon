@@ -75,7 +75,7 @@ class _EnterpriseRegistrationFormState extends State<EnterpriseRegistrationForm>
               behavior: SnackBarBehavior.floating,
             ),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       } catch (e) {
         if (mounted) {

@@ -58,11 +58,14 @@ class _SessionsScreenState extends State<SessionsScreen> with SingleTickerProvid
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const CoachingSessionForm()),
             );
+            if (result == true && mounted) {
+              sessionProvider.refreshSessions();
+            }
           },
           backgroundColor: AppTheme.primaryColor,
           child: const Icon(Icons.add),

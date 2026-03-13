@@ -44,8 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final enterpriseProvider = Provider.of<EnterpriseProvider>(context);
     final sessionProvider = Provider.of<SessionProvider>(context);
 
-    Map<String, dynamic>? userData = authProvider.userData ?? {};
-    CoachModel currentCoach = CoachModel.fromMap(userData);
+    Coach? currentCoach = authProvider.coach;
 
     return LoadingOverlay(
       isLoading: enterpriseProvider.isLoading || sessionProvider.isLoading,
@@ -141,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final sessionProvider = Provider.of<SessionProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
 
-    String coachName = authProvider.userData?['fullName'] ?? 'Coach';
+    String coachName = authProvider.coach?.fullName ?? 'Coach';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -487,7 +486,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDrawer(CoachModel currentCoach, AuthProvider authProvider) {
+  Widget _buildDrawer(Coach? currentCoach, AuthProvider authProvider) {
     return Drawer(
       child: Container(
         color: Colors.white,
@@ -511,7 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         radius: 30,
                         backgroundColor: Colors.white,
                         child: Text(
-                          currentCoach.fullName.isNotEmpty ? currentCoach.fullName[0] : 'C',
+                          (currentCoach?.fullName.isNotEmpty ?? false) ? currentCoach!.fullName[0] : 'C',
                           style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,
@@ -525,7 +524,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              currentCoach.fullName,
+                              currentCoach?.fullName ?? 'Coach',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -534,7 +533,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              currentCoach.email,
+                              currentCoach?.email ?? '',
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 12,
@@ -543,16 +542,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      _buildDrawerStat('Enterprises', '${currentCoach.enterprisesCount}'),
-                      const SizedBox(width: 20),
-                      _buildDrawerStat('Sessions', '${currentCoach.sessionsThisMonth}'),
-                      const SizedBox(width: 20),
-                      _buildDrawerStat('Performance', '${currentCoach.performanceScore}%'),
                     ],
                   ),
                 ],
@@ -681,31 +670,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildDrawerStat(String label, String value) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 11,
-            ),
-          ),
-        ],
       ),
     );
   }

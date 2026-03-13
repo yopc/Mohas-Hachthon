@@ -53,7 +53,7 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
         final enterpriseProvider = Provider.of<EnterpriseProvider>(context, listen: false);
 
         String coachId = authProvider.user?.uid ?? '';
-        String coachName = authProvider.userData?['fullName'] ?? '';
+        String coachName = authProvider.coach?.fullName ?? '';
         
         var enterprise = enterpriseProvider.enterprises.firstWhere((e) => e.id == _selectedEnterpriseId);
         String enterpriseName = enterprise.businessName;
@@ -89,7 +89,7 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
               behavior: SnackBarBehavior.floating,
             ),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       } catch (e) {
         if (mounted) {

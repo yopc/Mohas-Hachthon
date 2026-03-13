@@ -130,7 +130,7 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
         final enterpriseProvider = Provider.of<EnterpriseProvider>(context, listen: false);
 
         String coachId = authProvider.user?.uid ?? '';
-        String coachName = authProvider.userData?['fullName'] ?? '';
+        String coachName = authProvider.coach?.fullName ?? '';
         String enterpriseName = _selectedEnterprise?['businessName'] ?? '';
 
         Map<String, double> scores = _calculateScores();
@@ -169,7 +169,7 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
               behavior: SnackBarBehavior.floating,
             ),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       } catch (e) {
         if (mounted) {
