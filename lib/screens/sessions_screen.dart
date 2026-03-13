@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:mohas/screens/coaching_session_form.dart';
-import '../data/seed_data.dart';
-<<<<<<< HEAD
+import 'package:provider/provider.dart';
+import '../providers/session_provider.dart';
+import 'coaching_session_form.dart';
 import '../theme/app_theme2.dart';
-=======
-import '../theme/app_theme.dart';
->>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
-import '../models/session.dart';
 import '../widgets/session_card.dart';
+import '../widgets/loading_overlay.dart';
 
 class SessionsScreen extends StatefulWidget {
   const SessionsScreen({super.key});
@@ -27,49 +24,54 @@ class _SessionsScreenState extends State<SessionsScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: Column(
-        children: [
-          Container(
-            color: Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: AppTheme.primaryColor,
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: AppTheme.primaryColor,
-              indicatorWeight: 3,
-              tabs: const [
-                Tab(text: 'Upcoming'),
-                Tab(text: 'Completed'),
-              ],
+    final sessionProvider = Provider.of<SessionProvider>(context);
+
+    return LoadingOverlay(
+      isLoading: sessionProvider.isLoading,
+      child: Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        body: Column(
+          children: [
+            Container(
+              color: Colors.white,
+              child: TabBar(
+                controller: _tabController,
+                labelColor: AppTheme.primaryColor,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: AppTheme.primaryColor,
+                indicatorWeight: 3,
+                tabs: const [
+                  Tab(text: 'Upcoming'),
+                  Tab(text: 'Completed'),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildSessionsList(SeedData.getUpcomingSessions()),
-                _buildSessionsList(SeedData.getCompletedSessions()),
-              ],
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildSessionsList(sessionProvider.upcomingSessions),
+                  _buildSessionsList(sessionProvider.completedSessions),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const CoachingSessionForm()),
+            );
+          },
+          backgroundColor: AppTheme.primaryColor,
+          child: const Icon(Icons.add),
+        ),
       ),
-     floatingActionButton: FloatingActionButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CoachingSessionForm()),
-    );
-  },
-  backgroundColor: AppTheme.primaryColor,
-  child: const Icon(Icons.add),
-),
     );
   }
 
-  Widget _buildSessionsList(List<CoachingSession> sessions) {
+  Widget _buildSessionsList(List sessions) {
     if (sessions.isEmpty) {
       return Center(
         child: Column(

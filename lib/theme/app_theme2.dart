@@ -84,11 +84,11 @@ class AppTheme {
 
 class AppColors {
   static const List<Color> sectorColors = [
-    Color(0xFF1E4C5C), // Food & Beverage
-    Color(0xFFF4A261), // Retail
-    Color(0xFF2A9D8F), // Garment
-    Color(0xFFE76F51), // Agriculture
-    Color(0xFF8B5E3C), // Technology
+    Color(0xFF1E4C5C),
+    Color(0xFFF4A261),
+    Color(0xFF2A9D8F),
+    Color(0xFFE76F51),
+    Color(0xFF8B5E3C),
   ];
 
   static Color getScoreColor(double score) {

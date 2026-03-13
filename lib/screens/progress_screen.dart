@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import '../data/seed_data.dart';
-<<<<<<< HEAD
+import 'package:provider/provider.dart';
+import '../providers/enterprise_provider.dart';
+import '../providers/assessment_provider.dart';
 import '../theme/app_theme2.dart';
-=======
-import '../theme/app_theme.dart';
->>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -19,6 +17,17 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final enterpriseProvider = Provider.of<EnterpriseProvider>(context);
+    final assessmentProvider = Provider.of<AssessmentProvider>(context);
+
+    int totalEnterprises = enterpriseProvider.enterprises.length;
+    int activeEnterprises = enterpriseProvider.activeEnterprises.length;
+    int graduatedEnterprises = enterpriseProvider.graduatedEnterprises.length;
+    
+    double avgScore = enterpriseProvider.enterprises.isEmpty
+        ? 0
+        : enterpriseProvider.enterprises.map((e) => e.overallScore).reduce((a, b) => a + b) / enterpriseProvider.enterprises.length;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Progress Tracking'),
@@ -91,7 +100,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                       Expanded(
                         child: _buildOverallStat(
                           'Total Enterprises',
-                          SeedData.dashboardStats['totalEnterprises'].toString(),
+                          totalEnterprises.toString(),
                           Icons.business,
                           Colors.blue,
                         ),
@@ -99,7 +108,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                       Expanded(
                         child: _buildOverallStat(
                           'Active',
-                          SeedData.dashboardStats['activeEnterprises'].toString(),
+                          activeEnterprises.toString(),
                           Icons.check_circle,
                           Colors.green,
                         ),
@@ -107,7 +116,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                       Expanded(
                         child: _buildOverallStat(
                           'Graduated',
-                          SeedData.dashboardStats['graduatedEnterprises'].toString(),
+                          graduatedEnterprises.toString(),
                           Icons.emoji_events,
                           Colors.orange,
                         ),
@@ -122,14 +131,14 @@ class _ProgressScreenState extends State<ProgressScreen> {
                       Expanded(
                         child: _buildProgressRing(
                           'Avg Progress',
-                          SeedData.dashboardStats['averageProgressScore'],
+                          avgScore,
                           Icons.trending_up,
                         ),
                       ),
                       Expanded(
                         child: _buildProgressRing(
                           'Sessions',
-                          SeedData.dashboardStats['sessionsThisMonth'],
+                          assessmentProvider.assessments.length.toDouble(),
                           Icons.event,
                           suffix: '',
                         ),
@@ -137,7 +146,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                       Expanded(
                         child: _buildProgressRing(
                           'Assessments',
-                          SeedData.dashboardStats['assessmentsThisMonth'],
+                          assessmentProvider.assessments.length.toDouble(),
                           Icons.assignment,
                           suffix: '',
                         ),
@@ -157,11 +166,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            ...SeedData.enterprises.map((enterprise) {
-              final history = SeedData.progressHistory[enterprise.id] ?? [];
-              final progress = history.isNotEmpty
-                  ? ((history.last['score'] - history.first['score']) / history.first['score'] * 100).round()
-                  : 0;
+            ...enterpriseProvider.enterprises.map((enterprise) {
+              double startScore = 30.0;
+              double currentScore = enterprise.overallScore;
+              double progress = currentScore - startScore;
               
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -235,7 +243,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                               ),
                               const SizedBox(width: 2),
                               Text(
-                                '${progress.abs()}%',
+                                '${progress.abs().toStringAsFixed(0)}%',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -250,49 +258,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      height: 40,
-                      child: Row(
-                        children: history.take(6).map((point) {
-                          final index = history.indexOf(point);
-                          final width = (MediaQuery.of(context).size.width - 72) / 6;
-                          return SizedBox(
-                            width: width,
-                            child: Column(
-                              children: [
-                                Container(
-                                  height: 20,
-                                  width: 4,
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryColor,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Container(
-                                       height: (20 * (point['score'] / 100)).toDouble(),
-                                        width: 4,
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.successColor,
-                                          borderRadius: BorderRadius.circular(2),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${point['score']}%',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
+                    LinearProgressIndicator(
+                      value: currentScore / 100,
+                      backgroundColor: Colors.grey.shade200,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.getScoreColor(currentScore),
                       ),
                     ),
                   ],
@@ -341,7 +311,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
     );
   }
 
-  Widget _buildProgressRing(String label, dynamic value, IconData icon, {String suffix = '%'}) {
+  Widget _buildProgressRing(String label, double value, IconData icon, {String suffix = '%'}) {
+    double displayValue = value.clamp(0, 100) / 100;
+    
     return Column(
       children: [
         Stack(
@@ -351,7 +323,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
               width: 60,
               height: 60,
               child: CircularProgressIndicator(
-                value: value / 100,
+                value: displayValue,
                 backgroundColor: Colors.grey.shade200,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   value >= 70
@@ -366,7 +338,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             Column(
               children: [
                 Text(
-                  '$value$suffix',
+                  '${value.toStringAsFixed(0)}$suffix',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

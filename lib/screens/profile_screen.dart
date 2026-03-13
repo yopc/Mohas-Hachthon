@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import '../data/seed_data.dart';
-<<<<<<< HEAD
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../models/coach_model.dart';
 import '../theme/app_theme2.dart';
-=======
-import '../theme/app_theme.dart';
->>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 import 'login_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -12,7 +10,8 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final coach = SeedData.coaches[0];
+    final authProvider = Provider.of<AuthProvider>(context);
+    final coach = CoachModel.fromMap(authProvider.userData ?? {});
 
     return Scaffold(
       appBar: AppBar(
@@ -58,7 +57,7 @@ class ProfileScreen extends StatelessWidget {
                         ),
                         child: Center(
                           child: Text(
-                            coach.name[0],
+                            coach.fullName.isNotEmpty ? coach.fullName[0] : 'C',
                             style: const TextStyle(
                               fontSize: 48,
                               fontWeight: FontWeight.bold,
@@ -87,7 +86,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    coach.name,
+                    coach.fullName,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -113,7 +112,7 @@ class ProfileScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Performance Score: ${coach.performanceScore}%',
+                      'Performance Score: ${coach.performanceScore.toStringAsFixed(0)}%',
                       style: const TextStyle(
                         color: AppTheme.primaryColor,
                         fontWeight: FontWeight.bold,
@@ -280,12 +279,15 @@ class ProfileScreen extends StatelessWidget {
                                 child: const Text('Cancel'),
                               ),
                               TextButton(
-                                onPressed: () {
-                                  Navigator.pushAndRemoveUntil(
-                                    context,
-                                    MaterialPageRoute(builder: (context) =>  LoginScreen()),
-                                    (route) => false,
-                                  );
+                                onPressed: () async {
+                                  await authProvider.signOut();
+                                  if (context.mounted) {
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                      (route) => false,
+                                    );
+                                  }
                                 },
                                 child: const Text(
                                   'Sign Out',

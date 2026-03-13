@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/enterprise.dart';
-<<<<<<< HEAD
 import '../theme/app_theme2.dart';
-=======
-import '../theme/app_theme.dart';
->>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 
 class EnterpriseCard extends StatelessWidget {
   final Enterprise enterprise;
@@ -152,7 +148,7 @@ class EnterpriseCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      enterprise.priorities.first,
+                      enterprise.priorities.isNotEmpty ? enterprise.priorities.first : 'No priorities',
                       style: TextStyle(
                         fontSize: 12,
                         color: enterprise.overallScore < 50

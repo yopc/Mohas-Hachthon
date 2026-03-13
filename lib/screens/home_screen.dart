@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:mohas/models/coach.dart';
-import 'package:mohas/models/enterprise.dart';
-import 'package:mohas/models/session.dart';
-import 'package:mohas/screens/assessments_screen.dart';
-import 'package:mohas/screens/login_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/enterprise_provider.dart';
+import '../providers/session_provider.dart';
+import '../providers/assessment_provider.dart';
+import '../models/coach_model.dart';
 import 'enterprises_screen.dart';
+import 'assessments_screen.dart';
 import 'sessions_screen.dart';
 import 'progress_screen.dart';
 import 'reports_screen.dart';
 import 'profile_screen.dart';
 import '../widgets/bottom_nav_bar.dart';
-import '../data/seed_data.dart';
-<<<<<<< HEAD
-import '../theme/app_theme2.dart';
-=======
-import '../theme/app_theme.dart';
->>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 import '../widgets/enterprise_card.dart';
 import '../widgets/session_card.dart';
+import '../theme/app_theme2.dart';
+import '../widgets/loading_overlay.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,68 +28,76 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  late Coach _currentCoach;
-  late List<Enterprise> _enterprises;
-  late List<CoachingSession> _upcomingSessions;
-
   @override
   void initState() {
     super.initState();
-    _currentCoach = SeedData.coaches[0];
-    _enterprises = SeedData.enterprises;
-    _upcomingSessions = SeedData.getUpcomingSessions();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<EnterpriseProvider>(context, listen: false).fetchEnterprises();
+      Provider.of<SessionProvider>(context, listen: false).fetchSessions();
+      Provider.of<AssessmentProvider>(context, listen: false).fetchAssessments();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: Text(_getAppBarTitle()),
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
-        actions: [
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.errorColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text(
-                    '2',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+    final authProvider = Provider.of<AuthProvider>(context);
+    final enterpriseProvider = Provider.of<EnterpriseProvider>(context);
+    final sessionProvider = Provider.of<SessionProvider>(context);
+
+    Map<String, dynamic>? userData = authProvider.userData ?? {};
+    CoachModel currentCoach = CoachModel.fromMap(userData);
+
+    return LoadingOverlay(
+      isLoading: enterpriseProvider.isLoading || sessionProvider.isLoading,
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: AppTheme.backgroundColor,
+        appBar: AppBar(
+          title: Text(_getAppBarTitle()),
+          leading: IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+          actions: [
+            Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.notifications_outlined),
+                  onPressed: () {},
+                ),
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: AppTheme.errorColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Text(
+                      '2',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      drawer: _buildDrawer(),
-      body: _buildBody(),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+              ],
+            ),
+          ],
+        ),
+        drawer: _buildDrawer(currentCoach, authProvider),
+        body: _buildBody(),
+        bottomNavigationBar: CustomBottomNavBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+        ),
       ),
     );
   }
@@ -118,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return _buildDashboard();
       case 1:
-        return EnterprisesScreen(enterprises: _enterprises);
+        return const EnterprisesScreen();
       case 2:
         return const AssessmentsScreen();
       case 3:
@@ -131,6 +137,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDashboard() {
+    final enterpriseProvider = Provider.of<EnterpriseProvider>(context);
+    final sessionProvider = Provider.of<SessionProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
+
+    String coachName = authProvider.userData?['fullName'] ?? 'Coach';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -158,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       radius: 25,
                       backgroundColor: Colors.white,
                       child: Text(
-                        _currentCoach.name[0],
+                        coachName.isNotEmpty ? coachName[0] : 'C',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -172,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Hello, ${_currentCoach.name.split(' ')[0]}!',
+                            'Hello, ${coachName.split(' ')[0]}!',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -180,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           Text(
-                            'You have ${_upcomingSessions.length} sessions today',
+                            'You have ${sessionProvider.upcomingSessions.length} upcoming sessions',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
@@ -200,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _buildStatCard(
                   'Enterprises',
-                  _currentCoach.enterprisesCount.toString(),
+                  enterpriseProvider.enterprises.length.toString(),
                   Icons.business,
                   Colors.blue,
                 ),
@@ -209,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: _buildStatCard(
                   'Sessions',
-                  _currentCoach.sessionsThisMonth.toString(),
+                  sessionProvider.sessions.length.toString(),
                   Icons.event,
                   Colors.orange,
                 ),
@@ -217,8 +229,8 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  'Performance',
-                  '${_currentCoach.performanceScore}%',
+                  'Active',
+                  enterpriseProvider.activeEnterprises.length.toString(),
                   Icons.trending_up,
                   Colors.green,
                 ),
@@ -264,7 +276,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   'Schedule Session',
                   Icons.calendar_today,
                   AppTheme.secondaryColor,
-                  () {},
+                  () {
+                    setState(() {
+                      _selectedIndex = 3;
+                    });
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -273,7 +289,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   'Add Enterprise',
                   Icons.add_business,
                   AppTheme.accentColor,
-                  () {},
+                  () {
+                    setState(() {
+                      _selectedIndex = 1;
+                    });
+                  },
                 ),
               ),
             ],
@@ -301,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          _upcomingSessions.isEmpty
+          sessionProvider.upcomingSessions.isEmpty
               ? Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
@@ -327,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 )
               : Column(
-                  children: _upcomingSessions.take(2).map((session) {
+                  children: sessionProvider.upcomingSessions.take(2).map((session) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: SessionCard(
@@ -361,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
           Column(
-            children: _enterprises
+            children: enterpriseProvider.enterprises
                 .where((e) => e.overallScore < 50)
                 .take(2)
                 .map((enterprise) {
@@ -467,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDrawer() {
+  Widget _buildDrawer(CoachModel currentCoach, AuthProvider authProvider) {
     return Drawer(
       child: Container(
         color: Colors.white,
@@ -491,7 +511,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         radius: 30,
                         backgroundColor: Colors.white,
                         child: Text(
-                          _currentCoach.name[0],
+                          currentCoach.fullName.isNotEmpty ? currentCoach.fullName[0] : 'C',
                           style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,
@@ -505,7 +525,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _currentCoach.name,
+                              currentCoach.fullName,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -514,7 +534,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _currentCoach.email,
+                              currentCoach.email,
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 12,
@@ -528,11 +548,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      _buildDrawerStat('Enterprises', '24'),
+                      _buildDrawerStat('Enterprises', '${currentCoach.enterprisesCount}'),
                       const SizedBox(width: 20),
-                      _buildDrawerStat('Sessions', '42'),
+                      _buildDrawerStat('Sessions', '${currentCoach.sessionsThisMonth}'),
                       const SizedBox(width: 20),
-                      _buildDrawerStat('Performance', '94%'),
+                      _buildDrawerStat('Performance', '${currentCoach.performanceScore}%'),
                     ],
                   ),
                 ],
@@ -640,12 +660,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: const Text('Cancel'),
                             ),
                             TextButton(
-                              onPressed: () {
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(builder: (context) =>  LoginScreen()),
-                                  (route) => false,
-                                );
+                              onPressed: () async {
+                                await authProvider.signOut();
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                }
                               },
                               child: const Text(
                                 'Sign Out',

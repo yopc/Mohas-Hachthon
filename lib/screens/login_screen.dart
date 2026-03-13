@@ -1,165 +1,175 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import 'signup_screen.dart';
-<<<<<<< HEAD
 import '../theme/app_theme2.dart';
-=======
-import '../theme/app_theme.dart';
->>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
+import '../widgets/loading_overlay.dart';
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (_formKey.currentState!.validate()) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      bool success = await authProvider.signInWithEmail(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      if (!success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage ?? 'Login failed'),
+            backgroundColor: AppTheme.errorColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 40),
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.business_center,
-                  size: 40,
-                  color: AppTheme.primaryColor,
-                ),
-              ),
-              const SizedBox(height: 32),
-              const Text(
-                'Welcome Back!',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Sign in to continue coaching',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 48),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
-                  ),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: AppTheme.primaryColor,
-                      size: 20,
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Demo Account',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryColor,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Email: abebe.k@mesmer.et\nPassword: any password',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  hintText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  hintText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outline),
-                  suffixIcon: Icon(Icons.visibility_off),
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text('Forgot Password?'),
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  );
-                },
-                child: const Text('Sign In'),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+    final authProvider = Provider.of<AuthProvider>(context);
+
+    return LoadingOverlay(
+      isLoading: authProvider.isLoading,
+      child: Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Don't have an account?",
-                    style: TextStyle(color: AppTheme.textSecondary),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) =>  SignupScreen()),
-                      );
-                    },
-                    child: const Text(
-                      'Sign Up',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                      ),
+                  const SizedBox(height: 40),
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
                     ),
+                    child: const Icon(
+                      Icons.business_center,
+                      size: 40,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'Welcome Back!',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Sign in to continue coaching',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      hintText: 'Email',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Email is required';
+                      }
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        return 'Enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(
+                      hintText: 'Password',
+                      prefixIcon: Icon(Icons.lock_outline),
+                      suffixIcon: Icon(Icons.visibility_off),
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Password is required';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {},
+                      child: const Text('Forgot Password?'),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _handleLogin,
+                    child: const Text('Sign In'),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Don't have an account?",
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SignupScreen()),
+                          );
+                        },
+                        child: const Text(
+                          'Sign Up',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

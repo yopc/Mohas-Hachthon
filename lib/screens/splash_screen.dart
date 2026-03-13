@@ -1,34 +1,8 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
-<<<<<<< HEAD
 import '../theme/app_theme2.dart';
-=======
-import '../theme/app_theme.dart';
->>>>>>> c206d711cc382b2864036d7ce7bb8a6a1dd640ff
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _navigateToHome();
-  }
-
-  _navigateToHome() async {
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) =>  LoginScreen()),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
