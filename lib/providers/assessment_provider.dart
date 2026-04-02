@@ -3,31 +3,24 @@ import '../models/assessment.dart';
 import '../services/firestore_service.dart';
 
 class AssessmentProvider extends ChangeNotifier {
-  final FirestoreService _firestoreService = FirestoreService();
+  final FirestoreService _firestore = FirestoreService();
 
   List<Assessment> _assessments = [];
   bool _isLoading = false;
-  String? _errorMessage;
+  String? _error;
   bool _hasLoaded = false;
 
   List<Assessment> get assessments => _assessments;
   bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
+  String? get error => _error;
   bool get hasLoaded => _hasLoaded;
 
   void fetchAssessments() {
-    if (_hasLoaded) {
-      return; // Already loaded
-    }
-    
+    if (_hasLoaded) return;
     _setLoading(true);
     _clearError();
-    
-    print('🔍 AssessmentProvider: Fetching assessments...');
-    
-    _firestoreService.getAssessmentsStream().listen(
+    _firestore.getAssessmentsStream().listen(
       (assessments) {
-        print('📊 AssessmentProvider: Received ${assessments.length} assessments');
         _assessments = assessments;
         _hasLoaded = true;
         _setLoading(false);
@@ -35,8 +28,7 @@ class AssessmentProvider extends ChangeNotifier {
         notifyListeners();
       },
       onError: (error) {
-        print('❌ AssessmentProvider error: $error');
-        _errorMessage = error.toString();
+        _error = error.toString();
         _setLoading(false);
         notifyListeners();
       },
@@ -52,12 +44,10 @@ class AssessmentProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
-      print('➕ Adding assessment: ${assessment.enterpriseName}');
-      await _firestoreService.addAssessment(assessment);
-      print('✅ Assessment added successfully');
+      await _firestore.addAssessment(assessment);
+      // Stream will update automatically
     } catch (e) {
-      print('❌ Error adding assessment: $e');
-      _errorMessage = e.toString();
+      _error = e.toString();
       rethrow;
     } finally {
       _setLoading(false);
@@ -68,9 +58,9 @@ class AssessmentProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
-      await _firestoreService.updateAssessment(id, data);
+      await _firestore.updateAssessment(id, data);
     } catch (e) {
-      _errorMessage = e.toString();
+      _error = e.toString();
       rethrow;
     } finally {
       _setLoading(false);
@@ -81,13 +71,17 @@ class AssessmentProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
-      await _firestoreService.deleteAssessment(id);
+      await _firestore.deleteAssessment(id);
     } catch (e) {
-      _errorMessage = e.toString();
+      _error = e.toString();
       rethrow;
     } finally {
       _setLoading(false);
     }
+  }
+
+  Future<Assessment?> getBaselineForEnterprise(String enterpriseId) async {
+    return await _firestore.getBaselineForEnterprise(enterpriseId);
   }
 
   void _setLoading(bool value) {
@@ -96,6 +90,6 @@ class AssessmentProvider extends ChangeNotifier {
   }
 
   void _clearError() {
-    _errorMessage = null;
+    _error = null;
   }
 }

@@ -72,7 +72,7 @@ class Assessment {
   static Map<String, double> _parseScores(dynamic scoresValue) {
     if (scoresValue == null) return {};
     if (scoresValue is Map) {
-      return scoresValue.map((key, value) => 
+      return scoresValue.map((key, value) =>
           MapEntry(key.toString(), (value as num).toDouble()));
     }
     return {};

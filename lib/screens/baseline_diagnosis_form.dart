@@ -81,13 +81,11 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
                      _hrItems.length + _operationsItems.length + 
                      _governanceItems.length;
     int completedItems = 0;
-    
     for (var v in _financeItems.values) { if (v) completedItems++; }
     for (var v in _marketingItems.values) { if (v) completedItems++; }
     for (var v in _hrItems.values) { if (v) completedItems++; }
     for (var v in _operationsItems.values) { if (v) completedItems++; }
     for (var v in _governanceItems.values) { if (v) completedItems++; }
-    
     return completedItems / totalItems;
   }
 
@@ -123,25 +121,20 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate() && _selectedEnterpriseId != null) {
       setState(() => _isLoading = true);
-
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final assessmentProvider = Provider.of<AssessmentProvider>(context, listen: false);
         final enterpriseProvider = Provider.of<EnterpriseProvider>(context, listen: false);
-
         String coachId = authProvider.user?.uid ?? '';
         String coachName = authProvider.coach?.fullName ?? '';
         String enterpriseName = _selectedEnterprise?['businessName'] ?? '';
-
         Map<String, double> scores = _calculateScores();
         List<String> strengths = _getStrengths();
         List<String> weaknesses = _getWeaknesses();
         List<String> recommendations = _recommendedActionsController.text.split('\n').where((s) => s.isNotEmpty).toList();
-
         if (recommendations.isEmpty) {
           recommendations = ['Follow up on diagnosis recommendations'];
         }
-
         Assessment assessment = Assessment(
           id: '',
           enterpriseId: _selectedEnterpriseId!,
@@ -156,11 +149,8 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
           recommendations: recommendations,
           status: 'Completed',
         );
-
         await assessmentProvider.addAssessment(assessment);
-
         await enterpriseProvider.updateEnterprise(_selectedEnterpriseId!, {'scores': scores});
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -182,9 +172,7 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
           );
         }
       } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+        if (mounted) setState(() => _isLoading = false);
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -200,13 +188,10 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
   @override
   Widget build(BuildContext context) {
     final enterpriseProvider = Provider.of<EnterpriseProvider>(context);
-
     return LoadingOverlay(
       isLoading: _isLoading,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Baseline Diagnosis'),
-        ),
+        appBar: AppBar(title: const Text('Baseline Diagnosis')),
         body: Container(
           color: AppTheme.backgroundColor,
           child: Form(
@@ -246,17 +231,11 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
                             children: [
                               const Text(
                                 'Diagnosis Progress',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.textPrimary,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
                               ),
                               Text(
                                 '${(_calculateProgress() * 100).toStringAsFixed(0)}%',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.getScoreColor(_calculateProgress() * 100),
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.getScoreColor(_calculateProgress() * 100)),
                               ),
                             ],
                           ),
@@ -264,9 +243,7 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
                           LinearProgressIndicator(
                             value: _calculateProgress(),
                             backgroundColor: Colors.grey.shade200,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.getScoreColor(_calculateProgress() * 100)
-                            ),
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.getScoreColor(_calculateProgress() * 100)),
                           ),
                         ],
                       ),
@@ -278,14 +255,10 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
                     type: StepperType.vertical,
                     currentStep: _currentStep,
                     onStepContinue: () {
-                      if (_currentStep < 5) {
-                        setState(() => _currentStep++);
-                      }
+                      if (_currentStep < 5) setState(() => _currentStep++);
                     },
                     onStepCancel: () {
-                      if (_currentStep > 0) {
-                        setState(() => _currentStep--);
-                      }
+                      if (_currentStep > 0) setState(() => _currentStep--);
                     },
                     onStepTapped: (step) => setState(() => _currentStep = step),
                     steps: [
@@ -293,56 +266,31 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
                         title: const Text('Finance'),
                         isActive: true,
                         state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-                        content: _buildChecklistSection(
-                          'Finance',
-                          Icons.attach_money,
-                          _financeItems,
-                          (value) => _financeOther = value,
-                        ),
+                        content: _buildChecklistSection('Finance', Icons.attach_money, _financeItems, (value) => _financeOther = value),
                       ),
                       Step(
                         title: const Text('Marketing'),
                         isActive: true,
                         state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-                        content: _buildChecklistSection(
-                          'Marketing',
-                          Icons.campaign,
-                          _marketingItems,
-                          (value) => _marketingOther = value,
-                        ),
+                        content: _buildChecklistSection('Marketing', Icons.campaign, _marketingItems, (value) => _marketingOther = value),
                       ),
                       Step(
                         title: const Text('HR'),
                         isActive: true,
                         state: _currentStep > 2 ? StepState.complete : StepState.indexed,
-                        content: _buildChecklistSection(
-                          'HR',
-                          Icons.people,
-                          _hrItems,
-                          (value) => _hrOther = value,
-                        ),
+                        content: _buildChecklistSection('HR', Icons.people, _hrItems, (value) => _hrOther = value),
                       ),
                       Step(
                         title: const Text('Operations'),
                         isActive: true,
                         state: _currentStep > 3 ? StepState.complete : StepState.indexed,
-                        content: _buildChecklistSection(
-                          'Operations',
-                          Icons.settings,
-                          _operationsItems,
-                          (value) => _operationsOther = value,
-                        ),
+                        content: _buildChecklistSection('Operations', Icons.settings, _operationsItems, (value) => _operationsOther = value),
                       ),
                       Step(
                         title: const Text('Governance'),
                         isActive: true,
                         state: _currentStep > 4 ? StepState.complete : StepState.indexed,
-                        content: _buildChecklistSection(
-                          'Governance',
-                          Icons.account_balance,
-                          _governanceItems,
-                          (value) => _governanceOther = value,
-                        ),
+                        content: _buildChecklistSection('Governance', Icons.account_balance, _governanceItems, (value) => _governanceOther = value),
                       ),
                       Step(
                         title: const Text('Final Review'),
@@ -361,12 +309,7 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
     );
   }
 
-  Widget _buildChecklistSection(
-    String title,
-    IconData icon,
-    Map<String, bool> items,
-    Function(String) onOtherChanged,
-  ) {
+  Widget _buildChecklistSection(String title, IconData icon, Map<String, bool> items, Function(String) onOtherChanged) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -377,13 +320,7 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
               children: [
                 Icon(icon, color: AppTheme.primaryColor),
                 const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ],
             ),
             const SizedBox(height: 16),
@@ -391,11 +328,7 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
               return CheckboxListTile(
                 title: Text(key),
                 value: items[key],
-                onChanged: (value) {
-                  setState(() {
-                    items[key] = value ?? false;
-                  });
-                },
+                onChanged: (value) => setState(() => items[key] = value ?? false),
                 controlAffinity: ListTileControlAffinity.leading,
               );
             }),
@@ -420,20 +353,13 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Priority Challenges',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+            const Text('Priority Challenges', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             ..._challenges.keys.map((key) {
               return CheckboxListTile(
                 title: Text(key),
                 value: _challenges[key],
-                onChanged: (value) {
-                  setState(() {
-                    _challenges[key] = value ?? false;
-                  });
-                },
+                onChanged: (value) => setState(() => _challenges[key] = value ?? false),
                 controlAffinity: ListTileControlAffinity.leading,
               );
             }),
@@ -445,11 +371,7 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
               onChanged: (value) => _challengeOther = value,
             ),
             const SizedBox(height: 20),
-            
-            const Text(
-              'Recommended Actions',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+            const Text('Recommended Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             TextFormField(
               controller: _recommendedActionsController,
@@ -461,11 +383,7 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
               validator: (value) => value == null || value.isEmpty ? 'Recommended actions are required' : null,
             ),
             const SizedBox(height: 20),
-
-            const Text(
-              'Next Follow-up Date',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+            const Text('Next Follow-up Date', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             InkWell(
               onTap: () async {
@@ -481,22 +399,15 @@ class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
                 decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.calendar_today, color: AppTheme.primaryColor),
                 ),
-                child: Text(
-                  _followUpDate != null
-                      ? '${_followUpDate!.day}/${_followUpDate!.month}/${_followUpDate!.year}'
-                      : 'Select follow-up date',
-                ),
+                child: Text(_followUpDate != null ? '${_followUpDate!.day}/${_followUpDate!.month}/${_followUpDate!.year}' : 'Select follow-up date'),
               ),
             ),
             const SizedBox(height: 24),
-            
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _submitForm,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.successColor,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.successColor),
                 child: const Text('Submit Diagnosis'),
               ),
             ),

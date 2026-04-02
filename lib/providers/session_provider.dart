@@ -19,15 +19,10 @@ class SessionProvider extends ChangeNotifier {
 
   void fetchSessions() {
     if (_hasLoaded) return;
-    
     _setLoading(true);
     _clearError();
-    
-    print('🔍 SessionProvider: Fetching sessions...');
-    
     _firestoreService.getSessionsStream().listen(
       (sessions) {
-        print('📊 SessionProvider: Received ${sessions.length} sessions');
         _sessions = sessions;
         _hasLoaded = true;
         _setLoading(false);
@@ -35,7 +30,6 @@ class SessionProvider extends ChangeNotifier {
         notifyListeners();
       },
       onError: (error) {
-        print('❌ SessionProvider error: $error');
         _errorMessage = error.toString();
         _setLoading(false);
         notifyListeners();
@@ -52,11 +46,8 @@ class SessionProvider extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
-      print('➕ Adding session: ${session.enterpriseName}');
       await _firestoreService.addSession(session);
-      print('✅ Session added successfully');
     } catch (e) {
-      print('❌ Error adding session: $e');
       _errorMessage = e.toString();
       rethrow;
     } finally {

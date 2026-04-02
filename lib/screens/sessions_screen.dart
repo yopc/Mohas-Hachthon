@@ -25,7 +25,6 @@ class _SessionsScreenState extends State<SessionsScreen> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     final sessionProvider = Provider.of<SessionProvider>(context);
-
     return LoadingOverlay(
       isLoading: sessionProvider.isLoading,
       child: Scaffold(
@@ -40,10 +39,7 @@ class _SessionsScreenState extends State<SessionsScreen> with SingleTickerProvid
                 unselectedLabelColor: Colors.grey,
                 indicatorColor: AppTheme.primaryColor,
                 indicatorWeight: 3,
-                tabs: const [
-                  Tab(text: 'Upcoming'),
-                  Tab(text: 'Completed'),
-                ],
+                tabs: const [Tab(text: 'Upcoming'), Tab(text: 'Completed')],
               ),
             ),
             Expanded(
@@ -59,13 +55,8 @@ class _SessionsScreenState extends State<SessionsScreen> with SingleTickerProvid
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const CoachingSessionForm()),
-            );
-            if (result == true && mounted) {
-              sessionProvider.refreshSessions();
-            }
+            final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const CoachingSessionForm()));
+            if (result == true && mounted) sessionProvider.refreshSessions();
           },
           backgroundColor: AppTheme.primaryColor,
           child: const Icon(Icons.add),
@@ -80,37 +71,17 @@ class _SessionsScreenState extends State<SessionsScreen> with SingleTickerProvid
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.event_busy,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
+            Icon(Icons.event_busy, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
-            Text(
-              'No sessions found',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text('No sessions found', style: TextStyle(fontSize: 18, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
           ],
         ),
       );
     }
-
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: sessions.length,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: SessionCard(
-            session: sessions[index],
-            onTap: () {},
-          ),
-        );
-      },
+      itemBuilder: (context, index) => Padding(padding: const EdgeInsets.only(bottom: 12), child: SessionCard(session: sessions[index], onTap: () {})),
     );
   }
 }

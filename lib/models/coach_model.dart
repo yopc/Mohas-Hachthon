@@ -15,6 +15,7 @@ class Coach {
   final String? certificationUrl;
   final String region;
   final String zone;
+  final String? role;
   final String username;
   final String password;
   final String accountStatus;
@@ -25,6 +26,7 @@ class Coach {
 
   Coach({
     this.id,
+    this.role,
     required this.fullName,
     required this.gender,
     this.dateOfBirth,
@@ -72,7 +74,7 @@ class Coach {
       'supervisorName': supervisorName,
       'createdAt': createdAt.toIso8601String(),
       'isFirstLogin': isFirstLogin,
-      'role': 'coach',
+      'role': role ?? 'coach',
     };
   }
 
@@ -101,6 +103,9 @@ class Coach {
       supervisorName: map['supervisorName'] ?? '',
       createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt']) : DateTime.now(),
       isFirstLogin: map['isFirstLogin'] ?? true,
+      role: map['role'] ?? 'coach',
     );
   }
+
+  get performanceScore => null;
 }

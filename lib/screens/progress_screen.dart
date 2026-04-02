@@ -19,19 +19,13 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Widget build(BuildContext context) {
     final enterpriseProvider = Provider.of<EnterpriseProvider>(context);
     final assessmentProvider = Provider.of<AssessmentProvider>(context);
-
     int totalEnterprises = enterpriseProvider.enterprises.length;
     int activeEnterprises = enterpriseProvider.activeEnterprises.length;
     int graduatedEnterprises = enterpriseProvider.graduatedEnterprises.length;
-    
-    double avgScore = enterpriseProvider.enterprises.isEmpty
-        ? 0
-        : enterpriseProvider.enterprises.map((e) => e.overallScore).reduce((a, b) => a + b) / enterpriseProvider.enterprises.length;
+    double avgScore = enterpriseProvider.enterprises.isEmpty ? 0 : enterpriseProvider.enterprises.map((e) => e.overallScore).reduce((a, b) => a + b) / enterpriseProvider.enterprises.length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Progress Tracking'),
-      ),
+      appBar: AppBar(title: const Text('Progress Tracking')),
       backgroundColor: AppTheme.backgroundColor,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -40,36 +34,17 @@ class _ProgressScreenState extends State<ProgressScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.grey.shade200)),
               child: Row(
                 children: _periods.map((period) {
                   final isSelected = _selectedPeriod == period;
                   return Expanded(
                     child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedPeriod = period;
-                        });
-                      },
+                      onTap: () => setState(() => _selectedPeriod = period),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Text(
-                          period,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : AppTheme.textSecondary,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 13,
-                          ),
-                        ),
+                        decoration: BoxDecoration(color: isSelected ? AppTheme.primaryColor : Colors.transparent, borderRadius: BorderRadius.circular(30)),
+                        child: Text(period, textAlign: TextAlign.center, style: TextStyle(color: isSelected ? Colors.white : AppTheme.textSecondary, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
                       ),
                     ),
                   );
@@ -79,48 +54,17 @@ class _ProgressScreenState extends State<ProgressScreen> {
             const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Program Overview',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
+                  const Text('Program Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      Expanded(
-                        child: _buildOverallStat(
-                          'Total Enterprises',
-                          totalEnterprises.toString(),
-                          Icons.business,
-                          Colors.blue,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildOverallStat(
-                          'Active',
-                          activeEnterprises.toString(),
-                          Icons.check_circle,
-                          Colors.green,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildOverallStat(
-                          'Graduated',
-                          graduatedEnterprises.toString(),
-                          Icons.emoji_events,
-                          Colors.orange,
-                        ),
-                      ),
+                      Expanded(child: _buildOverallStat('Total Enterprises', totalEnterprises.toString(), Icons.business, Colors.blue)),
+                      Expanded(child: _buildOverallStat('Active', activeEnterprises.toString(), Icons.check_circle, Colors.green)),
+                      Expanded(child: _buildOverallStat('Graduated', graduatedEnterprises.toString(), Icons.emoji_events, Colors.orange)),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -128,143 +72,56 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      Expanded(
-                        child: _buildProgressRing(
-                          'Avg Progress',
-                          avgScore,
-                          Icons.trending_up,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildProgressRing(
-                          'Sessions',
-                          assessmentProvider.assessments.length.toDouble(),
-                          Icons.event,
-                          suffix: '',
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildProgressRing(
-                          'Assessments',
-                          assessmentProvider.assessments.length.toDouble(),
-                          Icons.assignment,
-                          suffix: '',
-                        ),
-                      ),
+                      Expanded(child: _buildProgressRing('Avg Progress', avgScore, Icons.trending_up)),
+                      Expanded(child: _buildProgressRing('Sessions', assessmentProvider.assessments.length.toDouble(), Icons.event, suffix: '')),
+                      Expanded(child: _buildProgressRing('Assessments', assessmentProvider.assessments.length.toDouble(), Icons.assignment, suffix: '')),
                     ],
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Enterprise Progress',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
-              ),
-            ),
+            const Text('Enterprise Progress', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
             const SizedBox(height: 16),
             ...enterpriseProvider.enterprises.map((enterprise) {
               double startScore = 30.0;
               double currentScore = enterprise.overallScore;
               double progress = currentScore - startScore;
-              
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
                 child: Column(
                   children: [
                     Row(
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.business,
-                            color: AppTheme.primaryColor,
-                            size: 20,
-                          ),
-                        ),
+                        Container(width: 40, height: 40, decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)), child: const Icon(Icons.business, color: AppTheme.primaryColor, size: 20)),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                enterprise.businessName,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textPrimary,
-                                ),
-                              ),
+                              Text(enterprise.businessName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
                               const SizedBox(height: 2),
-                              Text(
-                                enterprise.sector,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
+                              Text(enterprise.sector, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                             ],
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: progress >= 0
-                                ? AppTheme.successColor.withOpacity(0.1)
-                                : AppTheme.errorColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(color: progress >= 0 ? AppTheme.successColor.withOpacity(0.1) : AppTheme.errorColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
                           child: Row(
                             children: [
-                              Icon(
-                                progress >= 0
-                                    ? Icons.arrow_upward
-                                    : Icons.arrow_downward,
-                                size: 14,
-                                color: progress >= 0
-                                    ? AppTheme.successColor
-                                    : AppTheme.errorColor,
-                              ),
+                              Icon(progress >= 0 ? Icons.arrow_upward : Icons.arrow_downward, size: 14, color: progress >= 0 ? AppTheme.successColor : AppTheme.errorColor),
                               const SizedBox(width: 2),
-                              Text(
-                                '${progress.abs().toStringAsFixed(0)}%',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: progress >= 0
-                                      ? AppTheme.successColor
-                                      : AppTheme.errorColor,
-                                ),
-                              ),
+                              Text('${progress.abs().toStringAsFixed(0)}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: progress >= 0 ? AppTheme.successColor : AppTheme.errorColor)),
                             ],
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    LinearProgressIndicator(
-                      value: currentScore / 100,
-                      backgroundColor: Colors.grey.shade200,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.getScoreColor(currentScore),
-                      ),
-                    ),
+                    LinearProgressIndicator(value: currentScore / 100, backgroundColor: Colors.grey.shade200, valueColor: AlwaysStoppedAnimation<Color>(AppColors.getScoreColor(currentScore))),
                   ],
                 ),
               );
@@ -278,86 +135,27 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Widget _buildOverallStat(String label, String value, IconData icon, Color color) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
-        ),
+        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle), child: Icon(icon, color: color, size: 20)),
         const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey.shade600,
-          ),
-          textAlign: TextAlign.center,
-        ),
+        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600), textAlign: TextAlign.center),
       ],
     );
   }
 
   Widget _buildProgressRing(String label, double value, IconData icon, {String suffix = '%'}) {
     double displayValue = value.clamp(0, 100) / 100;
-    
     return Column(
       children: [
         Stack(
           alignment: Alignment.center,
           children: [
-            SizedBox(
-              width: 60,
-              height: 60,
-              child: CircularProgressIndicator(
-                value: displayValue,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  value >= 70
-                      ? AppTheme.successColor
-                      : value >= 40
-                          ? AppTheme.warningColor
-                          : AppTheme.errorColor,
-                ),
-                strokeWidth: 5,
-              ),
-            ),
-            Column(
-              children: [
-                Text(
-                  '${value.toStringAsFixed(0)}$suffix',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-              ],
-            ),
+            SizedBox(width: 60, height: 60, child: CircularProgressIndicator(value: displayValue, backgroundColor: Colors.grey.shade200, valueColor: AlwaysStoppedAnimation<Color>(value >= 70 ? AppTheme.successColor : value >= 40 ? AppTheme.warningColor : AppTheme.errorColor), strokeWidth: 5)),
+            Column(children: [Text('${value.toStringAsFixed(0)}$suffix', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary))]),
           ],
         ),
         const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey.shade600,
-          ),
-          textAlign: TextAlign.center,
-        ),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600), textAlign: TextAlign.center),
       ],
     );
   }

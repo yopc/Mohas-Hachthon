@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import 'home_screen.dart';
 import 'login_screen.dart';
 import 'splash_screen.dart';
+import 'supervisor_dashboard.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
@@ -17,7 +18,12 @@ class AuthWrapper extends StatelessWidget {
     }
 
     if (authProvider.isAuthenticated) {
-      return const HomeScreen();
+      final isSupervisor = authProvider.coach?.role == 'supervisor';
+      if (isSupervisor) {
+        return const SupervisorDashboard();
+      } else {
+        return const HomeScreen();
+      }
     }
 
     return const LoginScreen();

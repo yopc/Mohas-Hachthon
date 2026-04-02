@@ -15,21 +15,11 @@ class ReportsScreen extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Generate Report',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
+                  const Text('Generate Report', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
                   const SizedBox(height: 16),
                   _buildReportOption(
                     icon: Icons.person,
@@ -65,39 +55,17 @@ class ReportsScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Recent Reports',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
+                  const Text('Recent Reports', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
                   const SizedBox(height: 16),
-                  _buildRecentReportItem(
-                    'Coach Performance - March 2025',
-                    'Generated 2 days ago',
-                    'PDF',
-                  ),
+                  _buildRecentReportItem('Coach Performance - March 2025', 'Generated 2 days ago', 'PDF'),
                   const Divider(height: 24),
-                  _buildRecentReportItem(
-                    'Enterprise Progress Q1 2025',
-                    'Generated 5 days ago',
-                    'Excel',
-                  ),
+                  _buildRecentReportItem('Enterprise Progress Q1 2025', 'Generated 5 days ago', 'Excel'),
                   const Divider(height: 24),
-                  _buildRecentReportItem(
-                    'Assessment Summary - Q1',
-                    'Generated 1 week ago',
-                    'PDF',
-                  ),
+                  _buildRecentReportItem('Assessment Summary - Q1', 'Generated 1 week ago', 'PDF'),
                 ],
               ),
             ),
@@ -107,9 +75,7 @@ class ReportsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
-                ),
+                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.1)),
               ),
               child: Row(
                 children: [
@@ -119,41 +85,20 @@ class ReportsScreen extends StatelessWidget {
                       color: AppTheme.primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.schedule,
-                      color: AppTheme.primaryColor,
-                      size: 24,
-                    ),
+                    child: const Icon(Icons.schedule, color: AppTheme.primaryColor, size: 24),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Automated Reports',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
+                        const Text('Automated Reports', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
                         const SizedBox(height: 4),
-                        Text(
-                          'Get weekly reports delivered to your email',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
+                        Text('Get weekly reports delivered to your email', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
                       ],
                     ),
                   ),
-                  Switch(
-                    value: true,
-                    onChanged: (value) {},
-                    activeColor: AppTheme.primaryColor,
-                  ),
+                  Switch(value: true, onChanged: (value) {}, activeColor: AppTheme.primaryColor),
                 ],
               ),
             ),
@@ -177,32 +122,11 @@ class ReportsScreen extends StatelessWidget {
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 24,
-        ),
+        child: Icon(icon, color: color, size: 24),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          color: AppTheme.textPrimary,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey.shade600,
-        ),
-      ),
-      trailing: const Icon(
-        Icons.arrow_forward,
-        color: Colors.grey,
-        size: 20,
-      ),
+      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+      trailing: const Icon(Icons.arrow_forward, color: Colors.grey, size: 20),
       onTap: onTap,
     );
   }
@@ -227,22 +151,9 @@ class ReportsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
+              Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
               const SizedBox(height: 2),
-              Text(
-                date,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey.shade600,
-                ),
-              ),
+              Text(date, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
             ],
           ),
         ),

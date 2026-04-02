@@ -1,0 +1,4513 @@
+
+============ lib\screens\baseline_diagnosis_form.dart ============
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/assessment_provider.dart';
+import '../providers/enterprise_provider.dart';
+import '../models/assessment.dart';
+import '../theme/app_theme2.dart';
+import '../widgets/loading_overlay.dart';
+
+class BaselineDiagnosisForm extends StatefulWidget {
+  const BaselineDiagnosisForm({super.key});
+
+  @override
+  State<BaselineDiagnosisForm> createState() => _BaselineDiagnosisFormState();
+}
+
+class _BaselineDiagnosisFormState extends State<BaselineDiagnosisForm> {
+  final _formKey = GlobalKey<FormState>();
+  int _currentStep = 0;
+  bool _isLoading = false;
+
+  String? _selectedEnterpriseId;
+  Map<String, dynamic>? _selectedEnterprise;
+
+  final Map<String, bool> _financeItems = {
+    'Keeps bookkeeping': false,
+    'Tracks daily expenses': false,
+    'Uses bank account': false,
+    'Has financial plan': false,
+    'Uses digital payment': false,
+  };
+  String? _financeOther;
+
+  final Map<String, bool> _marketingItems = {
+    'Uses social media': false,
+    'Has pricing strategy': false,
+    'Keeps customer records': false,
+    'Has branding': false,
+    'Conducts promotion': false,
+  };
+  String? _marketingOther;
+
+  final Map<String, bool> _hrItems = {
+    'Written contracts': false,
+    'Employee training': false,
+    'Salary records': false,
+    'Performance evaluation': false,
+  };
+  String? _hrOther;
+
+  final Map<String, bool> _operationsItems = {
+    'Inventory tracking': false,
+    'Quality control': false,
+    'Supplier contracts': false,
+    'Production planning': false,
+  };
+  String? _operationsOther;
+
+  final Map<String, bool> _governanceItems = {
+    'Clear business structure': false,
+    'Strategic planning': false,
+    'Regular meetings': false,
+    'Compliance with tax': false,
+  };
+  String? _governanceOther;
+
+  final Map<String, bool> _challenges = {
+    'Access to finance': false,
+    'Marketing': false,
+    'Staff management': false,
+    'Operations': false,
+    'Business planning': false,
+    'Technology adoption': false,
+  };
+  String? _challengeOther;
+  final _recommendedActionsController = TextEditingController();
+  DateTime? _followUpDate;
+
+  double _calculateProgress() {
+    int totalItems = _financeItems.length + _marketingItems.length + 
+                     _hrItems.length + _operationsItems.length + 
+                     _governanceItems.length;
+    int completedItems = 0;
+    for (var v in _financeItems.values) { if (v) completedItems++; }
+    for (var v in _marketingItems.values) { if (v) completedItems++; }
+    for (var v in _hrItems.values) { if (v) completedItems++; }
+    for (var v in _operationsItems.values) { if (v) completedItems++; }
+    for (var v in _governanceItems.values) { if (v) completedItems++; }
+    return completedItems / totalItems;
+  }
+
+  Map<String, double> _calculateScores() {
+    return {
+      'finance': (_financeItems.values.where((v) => v).length / _financeItems.length * 100),
+      'marketing': (_marketingItems.values.where((v) => v).length / _marketingItems.length * 100),
+      'hr': (_hrItems.values.where((v) => v).length / _hrItems.length * 100),
+      'operations': (_operationsItems.values.where((v) => v).length / _operationsItems.length * 100),
+      'governance': (_governanceItems.values.where((v) => v).length / _governanceItems.length * 100),
+    };
+  }
+
+  List<String> _getStrengths() {
+    List<String> strengths = [];
+    if (_financeItems['Keeps bookkeeping'] == true) strengths.add('Maintains bookkeeping');
+    if (_marketingItems['Has pricing strategy'] == true) strengths.add('Has pricing strategy');
+    if (_hrItems['Employee training'] == true) strengths.add('Provides employee training');
+    if (_operationsItems['Quality control'] == true) strengths.add('Has quality control');
+    if (_governanceItems['Compliance with tax'] == true) strengths.add('Tax compliant');
+    return strengths;
+  }
+
+  List<String> _getWeaknesses() {
+    List<String> weaknesses = [];
+    if (_financeItems['Keeps bookkeeping'] == false) weaknesses.add('No bookkeeping');
+    if (_marketingItems['Uses social media'] == false) weaknesses.add('No social media presence');
+    if (_hrItems['Written contracts'] == false) weaknesses.add('No written contracts');
+    if (_operationsItems['Inventory tracking'] == false) weaknesses.add('No inventory tracking');
+    return weaknesses;
+  }
+
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate() && _selectedEnterpriseId != null) {
+      setState(() => _isLoading = true);
+      try {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final assessmentProvider = Provider.of<AssessmentProvider>(context, listen: false);
+        final enterpriseProvider = Provider.of<EnterpriseProvider>(context, listen: false);
+        String coachId = authProvider.user?.uid ?? '';
+        String coachName = authProvider.coach?.fullName ?? '';
+        String enterpriseName = _selectedEnterprise?['businessName'] ?? '';
+        Map<String, double> scores = _calculateScores();
+        List<String> strengths = _getStrengths();
+        List<String> weaknesses = _getWeaknesses();
+        List<String> recommendations = _recommendedActionsController.text.split('\n').where((s) => s.isNotEmpty).toList();
+        if (recommendations.isEmpty) {
+          recommendations = ['Follow up on diagnosis recommendations'];
+        }
+        Assessment assessment = Assessment(
+          id: '',
+          enterpriseId: _selectedEnterpriseId!,
+          enterpriseName: enterpriseName,
+          coachId: coachId,
+          coachName: coachName,
+          date: DateTime.now(),
+          type: 'Baseline',
+          scores: scores,
+          strengths: strengths,
+          weaknesses: weaknesses,
+          recommendations: recommendations,
+          status: 'Completed',
+        );
+        await assessmentProvider.addAssessment(assessment);
+        await enterpriseProvider.updateEnterprise(_selectedEnterpriseId!, {'scores': scores});
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Diagnosis submitted successfully!'),
+              backgroundColor: AppTheme.successColor,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: AppTheme.errorColor,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select an enterprise and complete all required fields'),
+          backgroundColor: AppTheme.errorColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enterpriseProvider = Provider.of<EnterpriseProvider>(context);
+    return LoadingOverlay(
+      isLoading: _isLoading,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Baseline Diagnosis')),
+        body: Container(
+          color: AppTheme.backgroundColor,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          DropdownButtonFormField<String>(
+                            value: _selectedEnterpriseId,
+                            decoration: const InputDecoration(
+                              labelText: 'Select Enterprise',
+                              prefixIcon: Icon(Icons.business, color: AppTheme.primaryColor),
+                            ),
+                            items: enterpriseProvider.enterprises.map((e) {
+                              return DropdownMenuItem(
+                                value: e.id,
+                                child: Text(e.businessName),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedEnterpriseId = value;
+                                _selectedEnterprise = enterpriseProvider.enterprises.firstWhere((e) => e.id == value).toMap();
+                              });
+                            },
+                            validator: (value) => value == null ? 'Please select an enterprise' : null,
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Diagnosis Progress',
+                                style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                              ),
+                              Text(
+                                '${(_calculateProgress() * 100).toStringAsFixed(0)}%',
+                                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.getScoreColor(_calculateProgress() * 100)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          LinearProgressIndicator(
+                            value: _calculateProgress(),
+                            backgroundColor: Colors.grey.shade200,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.getScoreColor(_calculateProgress() * 100)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Stepper(
+                    type: StepperType.vertical,
+                    currentStep: _currentStep,
+                    onStepContinue: () {
+                      if (_currentStep < 5) setState(() => _currentStep++);
+                    },
+                    onStepCancel: () {
+                      if (_currentStep > 0) setState(() => _currentStep--);
+                    },
+                    onStepTapped: (step) => setState(() => _currentStep = step),
+                    steps: [
+                      Step(
+                        title: const Text('Finance'),
+                        isActive: true,
+                        state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+                        content: _buildChecklistSection('Finance', Icons.attach_money, _financeItems, (value) => _financeOther = value),
+                      ),
+                      Step(
+                        title: const Text('Marketing'),
+                        isActive: true,
+                        state: _currentStep > 1 ? StepState.complete : StepState.indexed,
+                        content: _buildChecklistSection('Marketing', Icons.campaign, _marketingItems, (value) => _marketingOther = value),
+                      ),
+                      Step(
+                        title: const Text('HR'),
+                        isActive: true,
+                        state: _currentStep > 2 ? StepState.complete : StepState.indexed,
+                        content: _buildChecklistSection('HR', Icons.people, _hrItems, (value) => _hrOther = value),
+                      ),
+                      Step(
+                        title: const Text('Operations'),
+                        isActive: true,
+                        state: _currentStep > 3 ? StepState.complete : StepState.indexed,
+                        content: _buildChecklistSection('Operations', Icons.settings, _operationsItems, (value) => _operationsOther = value),
+                      ),
+                      Step(
+                        title: const Text('Governance'),
+                        isActive: true,
+                        state: _currentStep > 4 ? StepState.complete : StepState.indexed,
+                        content: _buildChecklistSection('Governance', Icons.account_balance, _governanceItems, (value) => _governanceOther = value),
+                      ),
+                      Step(
+                        title: const Text('Final Review'),
+                        isActive: true,
+                        state: _currentStep > 5 ? StepState.complete : StepState.indexed,
+                        content: _buildFinalReview(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChecklistSection(String title, IconData icon, Map<String, bool> items, Function(String) onOtherChanged) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: AppTheme.primaryColor),
+                const SizedBox(width: 8),
+                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...items.keys.map((key) {
+              return CheckboxListTile(
+                title: Text(key),
+                value: items[key],
+                onChanged: (value) => setState(() => items[key] = value ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+              );
+            }),
+            const SizedBox(height: 8),
+            TextFormField(
+              decoration: const InputDecoration(
+                labelText: 'Other (specify)',
+                prefixIcon: Icon(Icons.edit, color: AppTheme.primaryColor),
+              ),
+              onChanged: onOtherChanged,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFinalReview() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Priority Challenges', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            ..._challenges.keys.map((key) {
+              return CheckboxListTile(
+                title: Text(key),
+                value: _challenges[key],
+                onChanged: (value) => setState(() => _challenges[key] = value ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+              );
+            }),
+            TextFormField(
+              decoration: const InputDecoration(
+                labelText: 'Other Challenge',
+                prefixIcon: Icon(Icons.edit, color: AppTheme.primaryColor),
+              ),
+              onChanged: (value) => _challengeOther = value,
+            ),
+            const SizedBox(height: 20),
+            const Text('Recommended Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _recommendedActionsController,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                hintText: 'Enter recommended actions...',
+                alignLabelWithHint: true,
+              ),
+              validator: (value) => value == null || value.isEmpty ? 'Recommended actions are required' : null,
+            ),
+            const SizedBox(height: 20),
+            const Text('Next Follow-up Date', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now().add(const Duration(days: 30)),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (date != null) setState(() => _followUpDate = date);
+              },
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.calendar_today, color: AppTheme.primaryColor),
+                ),
+                child: Text(_followUpDate != null ? '${_followUpDate!.day}/${_followUpDate!.month}/${_followUpDate!.year}' : 'Select follow-up date'),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submitForm,
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.successColor),
+                child: const Text('Submit Diagnosis'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _recommendedActionsController.dispose();
+    super.dispose();
+  }
+}
+
+
+[======== ERRORS ========]
+Line 32, Column 11: warning - The value of the field '_financeOther' isn't used - lib\screens\baseline_diagnosis_form.dart:32:11 - unused_field
+Line 41, Column 11: warning - The value of the field '_marketingOther' isn't used - lib\screens\baseline_diagnosis_form.dart:41:11 - unused_field
+Line 49, Column 11: warning - The value of the field '_hrOther' isn't used - lib\screens\baseline_diagnosis_form.dart:49:11 - unused_field
+Line 57, Column 11: warning - The value of the field '_operationsOther' isn't used - lib\screens\baseline_diagnosis_form.dart:57:11 - unused_field
+Line 65, Column 11: warning - The value of the field '_governanceOther' isn't used - lib\screens\baseline_diagnosis_form.dart:65:11 - unused_field
+Line 75, Column 11: warning - The value of the field '_challengeOther' isn't used - lib\screens\baseline_diagnosis_form.dart:75:11 - unused_field
+
+============ lib\screens\coach_detail_screen.dart ============
+
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/coach_model.dart';
+import '../theme/app_theme2.dart';
+import 'edit_profile_screen.dart';
+
+class CoachDetailScreen extends StatefulWidget {
+  final Coach coach;
+  const CoachDetailScreen({super.key, required this.coach});
+
+  @override
+  State<CoachDetailScreen> createState() => _CoachDetailScreenState();
+}
+
+class _CoachDetailScreenState extends State<CoachDetailScreen> {
+  bool _isLoading = false;
+
+  Future<void> _updateCoachStatus(String newStatus) async {
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.coach.id)
+          .update({'accountStatus': newStatus});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Coach status updated to $newStatus'),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
+      Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating status: $e'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteCoach() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Icon(Icons.warning, color: AppTheme.errorColor, size: 50),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Delete Coach Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            Text('Are you sure you want to delete ${widget.coach.fullName}?'),
+            const SizedBox(height: 8),
+            const Text('This action cannot be undone.', style: TextStyle(color: AppTheme.errorColor, fontSize: 12)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              setState(() => _isLoading = true);
+              try {
+                await FirebaseFirestore.instance.collection('users').doc(widget.coach.id).delete();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Coach deleted successfully'), backgroundColor: AppTheme.successColor),
+                );
+                Navigator.pop(context, true);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error deleting coach: $e'), backgroundColor: AppTheme.errorColor),
+                );
+              } finally {
+                setState(() => _isLoading = false);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.coach.fullName),
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => EditProfileScreen(initialCoach: widget.coach)),
+              ).then((_) => setState(() {}));
+            },
+          ),
+          IconButton(icon: const Icon(Icons.delete), onPressed: _deleteCoach),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), shape: BoxShape.circle),
+                          child: Center(
+                            child: Text(
+                              widget.coach.fullName.isNotEmpty ? widget.coach.fullName[0].toUpperCase() : 'C',
+                              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(widget.coach.fullName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: widget.coach.accountStatus == 'active' ? AppTheme.successColor.withOpacity(0.1) : AppTheme.errorColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            widget.coach.accountStatus.toUpperCase(),
+                            style: TextStyle(
+                              color: widget.coach.accountStatus == 'active' ? AppTheme.successColor : AppTheme.errorColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Account Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: widget.coach.accountStatus == 'active' ? null : () => _updateCoachStatus('active'),
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.successColor, foregroundColor: Colors.white),
+                                  child: const Text('Activate'),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: widget.coach.accountStatus == 'inactive' ? null : () => _updateCoachStatus('inactive'),
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor, foregroundColor: Colors.white),
+                                  child: const Text('Deactivate'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildInfoSection('Personal Information', Icons.person, [
+                    _buildInfoRow('Full Name', widget.coach.fullName),
+                    _buildInfoRow('Gender', widget.coach.gender),
+                    _buildInfoRow('Date of Birth', widget.coach.dateOfBirth != null ? '${widget.coach.dateOfBirth!.day}/${widget.coach.dateOfBirth!.month}/${widget.coach.dateOfBirth!.year}' : 'Not provided'),
+                    _buildInfoRow('Phone', widget.coach.phone),
+                    _buildInfoRow('Email', widget.coach.email),
+                    _buildInfoRow('National ID', widget.coach.nationalId),
+                  ]),
+                  _buildInfoSection('Professional Information', Icons.work, [
+                    _buildInfoRow('Education', widget.coach.educationLevel + (widget.coach.educationOther != null ? ' - ${widget.coach.educationOther}' : '')),
+                    _buildInfoRow('Field of Study', widget.coach.fieldOfStudy + (widget.coach.fieldOfStudyOther != null ? ' - ${widget.coach.fieldOfStudyOther}' : '')),
+                    _buildInfoRow('Experience', '${widget.coach.yearsOfExperience} years'),
+                    _buildInfoRow('Certification', widget.coach.hasCertification ? 'Yes' : 'No'),
+                    if (widget.coach.hasCertification && widget.coach.certificationUrl != null) _buildInfoRow('Cert URL', widget.coach.certificationUrl!),
+                  ]),
+                  _buildInfoSection('Location Information', Icons.location_on, [
+                    _buildInfoRow('Region', widget.coach.region),
+                    _buildInfoRow('Zone', widget.coach.zone),
+                  ]),
+                  _buildInfoSection('Account Information', Icons.account_circle, [
+                    _buildInfoRow('Username', widget.coach.username),
+                    _buildInfoRow('Supervisor', widget.coach.supervisorName),
+                    _buildInfoRow('Member Since', '${widget.coach.createdAt.day}/${widget.coach.createdAt.month}/${widget.coach.createdAt.year}'),
+                    _buildInfoRow('First Login', widget.coach.isFirstLogin ? 'Yes' : 'No'),
+                  ]),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildInfoSection(String title, IconData icon, List<Widget> children) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                    child: Icon(icon, color: AppTheme.primaryColor, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ...children,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 100, child: Text(label, style: TextStyle(fontSize: 13, color: Colors.grey.shade600))),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.textPrimary))),
+        ],
+      ),
+    );
+  }
+}
+
+
+[======== ERRORS ========]
+Line 5, Column 8: warning - Unused import: 'edit_profile_screen.dart' - lib\screens\coach_detail_screen.dart:5:8 - unused_import
+Line 25, Column 28: info - Don't use 'BuildContext's across async gaps - lib\screens\coach_detail_screen.dart:25:28 - use_build_context_synchronously
+Line 31, Column 21: info - Don't use 'BuildContext's across async gaps - lib\screens\coach_detail_screen.dart:31:21 - use_build_context_synchronously
+Line 33, Column 28: info - Don't use 'BuildContext's across async gaps - lib\screens\coach_detail_screen.dart:33:28 - use_build_context_synchronously
+Line 67, Column 38: info - Don't use 'BuildContext's across async gaps - lib\screens\coach_detail_screen.dart:67:38 - use_build_context_synchronously
+Line 70, Column 31: info - Don't use 'BuildContext's across async gaps - lib\screens\coach_detail_screen.dart:70:31 - use_build_context_synchronously
+Line 72, Column 38: info - Don't use 'BuildContext's across async gaps - lib\screens\coach_detail_screen.dart:72:38 - use_build_context_synchronously
+Line 100, Column 57: error - The method 'EditProfileScreen' isn't defined for the type '_CoachDetailScreenState' - lib\screens\coach_detail_screen.dart:100:57 - undefined_method
+
+============ lib\screens\edit_profile_screen.dart ============
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/enterprise.dart';
+import '../providers/enterprise_provider.dart';
+import '../providers/assessment_provider.dart';
+import '../providers/session_provider.dart';
+import '../providers/iap_provider.dart';
+import '../providers/evidence_provider.dart';
+import '../providers/graduation_provider.dart';
+import '../theme/app_theme2.dart';
+import 'iap_editor_screen.dart';
+import 'graduation_checklist_screen.dart';
+import '../widgets/evidence_picker.dart';
+
+class EnterpriseProfileScreen extends StatefulWidget {
+  final String enterpriseId;
+  const EnterpriseProfileScreen({super.key, required this.enterpriseId});
+
+  @override
+  State<EnterpriseProfileScreen> createState() => _EnterpriseProfileScreenState();
+}
+
+class _EnterpriseProfileScreenState extends State<EnterpriseProfileScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  Enterprise? _enterprise;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 6, vsync: this);
+    _loadEnterprise();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadEnterprise() async {
+    final enterpriseProvider = Provider.of<EnterpriseProvider>(context, listen: false);
+    // Try to find in existing list
+    Enterprise? existing;
+    try {
+      existing = enterpriseProvider.enterprises.firstWhere(
+        (e) => e.id == widget.enterpriseId,
+      );
+    } catch (e) {
+      existing = null;
+    }
+    if (existing != null) {
+      setState(() {
+        _enterprise = existing;
+        _isLoading = false;
+      });
+      _loadData();
+      return;
+    }
+    // Fetch directly from Firestore
+    final fetched = await enterpriseProvider.getEnterpriseById(widget.enterpriseId);
+    if (mounted) {
+      setState(() {
+        _enterprise = fetched;
+        _isLoading = false;
+      });
+      if (fetched != null) {
+        _loadData();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Enterprise not found'), backgroundColor: AppTheme.errorColor),
+        );
+      }
+    }
+  }
+
+  void _loadData() {
+    if (_enterprise == null) return;
+    Provider.of<IapProvider>(context, listen: false).fetchIap(widget.enterpriseId);
+    Provider.of<EvidenceProvider>(context, listen: false).fetchEvidence(widget.enterpriseId);
+    Provider.of<GraduationProvider>(context, listen: false).fetchChecklist(widget.enterpriseId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_enterprise == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Enterprise Not Found')),
+        body: const Center(child: Text('Could not load enterprise details.')),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_enterprise!.businessName),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Overview'),
+            Tab(text: 'Baseline'),
+            Tab(text: 'IAP'),
+            Tab(text: 'Coaching'),
+            Tab(text: 'Evidence'),
+            Tab(text: 'Certificates'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildOverviewTab(_enterprise!),
+          _buildBaselineTab(_enterprise!),
+          _buildIapTab(),
+          _buildCoachingTab(),
+          _buildEvidenceTab(),
+          _buildCertificatesTab(),
+        ],
+      ),
+      floatingActionButton: _buildFloatingButton(_enterprise!),
+    );
+  }
+
+  Widget _buildOverviewTab(Enterprise enterprise) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _infoCard(enterprise),
+          const SizedBox(height: 16),
+          _businessMetricsCard(enterprise),
+          const SizedBox(height: 16),
+          _scoresCard(enterprise),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoCard(Enterprise enterprise) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Owner'),
+              subtitle: Text(enterprise.ownerName),
+            ),
+            ListTile(
+              leading: const Icon(Icons.phone),
+              title: const Text('Phone'),
+              subtitle: Text(enterprise.phone),
+            ),
+            ListTile(
+              leading: const Icon(Icons.location_on),
+              title: const Text('Location'),
+              subtitle: Text(enterprise.location),
+            ),
+            ListTile(
+              leading: const Icon(Icons.category),
+              title: const Text('Sector'),
+              subtitle: Text(enterprise.sector),
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('Registered'),
+              subtitle: Text(_formatDate(enterprise.registrationDate)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _businessMetricsCard(Enterprise enterprise) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Business Metrics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Monthly Revenue', style: TextStyle(color: Colors.grey.shade600)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${enterprise.baselineMonthlyRevenue?.toStringAsFixed(0) ?? '—'} ETB',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text('Baseline', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Current', style: TextStyle(color: Colors.grey.shade600)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${enterprise.currentMonthlyRevenue?.toStringAsFixed(0) ?? '—'} ETB',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildChangeIndicator(
+                        enterprise.baselineMonthlyRevenue,
+                        enterprise.currentMonthlyRevenue,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Employees', style: TextStyle(color: Colors.grey.shade600)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${enterprise.baselineEmployees ?? '—'}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text('Baseline', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Current', style: TextStyle(color: Colors.grey.shade600)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${enterprise.currentEmployees ?? '—'}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildEmployeeChange(enterprise.baselineEmployees, enterprise.currentEmployees),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _scoresCard(Enterprise enterprise) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Scores', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            _scoreRow('Finance', enterprise.financeScore),
+            _scoreRow('Marketing', enterprise.marketingScore),
+            _scoreRow('Operations', enterprise.operationsScore),
+            _scoreRow('HR', enterprise.hrScore),
+            _scoreRow('Governance', enterprise.governanceScore),
+            const Divider(),
+            _scoreRow('Overall', enterprise.overallScore, isOverall: true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _scoreRow(String label, double score, {bool isOverall = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(label, style: TextStyle(fontWeight: isOverall ? FontWeight.bold : FontWeight.normal)),
+          ),
+          Expanded(
+            child: LinearProgressIndicator(
+              value: score / 100,
+              backgroundColor: Colors.grey.shade200,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.getScoreColor(score)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '${score.toInt()}%',
+            style: TextStyle(fontWeight: isOverall ? FontWeight.bold : FontWeight.normal),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChangeIndicator(double? baseline, double? current) {
+    if (baseline == null || current == null) return const SizedBox.shrink();
+    final diff = current - baseline;
+    final percent = (diff / baseline * 100).abs().toStringAsFixed(0);
+    final isPositive = diff >= 0;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(isPositive ? Icons.trending_up : Icons.trending_down, size: 16, color: isPositive ? AppTheme.successColor : AppTheme.errorColor),
+        const SizedBox(width: 4),
+        Text(
+          '$percent%',
+          style: TextStyle(color: isPositive ? AppTheme.successColor : AppTheme.errorColor, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmployeeChange(int? baseline, int? current) {
+    if (baseline == null || current == null) return const SizedBox.shrink();
+    final diff = current - baseline;
+    final isPositive = diff >= 0;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(isPositive ? Icons.add : Icons.remove, size: 16, color: isPositive ? AppTheme.successColor : AppTheme.errorColor),
+        const SizedBox(width: 4),
+        Text(
+          diff.abs().toString(),
+          style: TextStyle(color: isPositive ? AppTheme.successColor : AppTheme.errorColor, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBaselineTab(Enterprise enterprise) {
+    return FutureBuilder(
+      future: Provider.of<AssessmentProvider>(context, listen: false)
+          .getBaselineForEnterprise(enterprise.id),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final baseline = snapshot.data;
+        if (baseline == null) {
+          return const Center(child: Text('No baseline assessment found.'));
+        }
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text('Baseline Assessment', style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 8),
+                      Text('Date: ${_formatDate(baseline.date)}'),
+                      const SizedBox(height: 16),
+                      ...baseline.strengths.map((s) => _bulletPoint(Icons.check_circle, s, AppTheme.successColor)),
+                      ...baseline.weaknesses.map((w) => _bulletPoint(Icons.warning, w, AppTheme.warningColor)),
+                      const SizedBox(height: 16),
+                      const Text('Recommendations', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ...baseline.recommendations.map((r) => _bulletPoint(Icons.lightbulb, r, Colors.amber)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _bulletPoint(IconData icon, String text, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIapTab() {
+    return Consumer<IapProvider>(
+      builder: (context, iapProvider, _) {
+        final iap = iapProvider.iap;
+        if (iapProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (iap == null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('No IAP found.'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => IapEditorScreen(enterpriseId: widget.enterpriseId),
+                      ),
+                    ).then((_) => iapProvider.fetchIap(widget.enterpriseId));
+                  },
+                  child: const Text('Create IAP'),
+                ),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: iap.tasks.length,
+          itemBuilder: (context, index) {
+            final task = iap.tasks[index];
+            return Card(
+              child: ListTile(
+                leading: Checkbox(
+                  value: task.status == 'done',
+                  onChanged: (value) {
+                    iapProvider.updateTaskStatus(iap.id, task.id, value! ? 'done' : 'in_progress');
+                  },
+                ),
+                title: Text(task.description),
+                subtitle: Text('Owner: ${task.owner} | Due: ${task.dueDate != null ? _formatDate(task.dueDate!) : 'No deadline'}'),
+                trailing: task.status == 'done' ? const Icon(Icons.check_circle, color: AppTheme.successColor) : null,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCoachingTab() {
+    final sessions = Provider.of<SessionProvider>(context).sessions
+        .where((s) => s.enterpriseId == widget.enterpriseId)
+        .toList();
+    if (sessions.isEmpty) {
+      return const Center(child: Text('No coaching sessions yet.'));
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: sessions.length,
+      itemBuilder: (context, index) {
+        final session = sessions[index];
+        return Card(
+          child: ListTile(
+            title: Text('${session.type} - ${_formatDate(session.scheduledDate)}'),
+            subtitle: Text(session.notes),
+            trailing: session.isCompleted ? const Icon(Icons.check, color: AppTheme.successColor) : null,
+            onTap: () {},
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEvidenceTab() {
+    return Consumer<EvidenceProvider>(
+      builder: (context, evidenceProvider, _) {
+        final evidences = evidenceProvider.evidences;
+        if (evidenceProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => EvidencePicker(
+                      enterpriseId: widget.enterpriseId,
+                      recordType: 'enterprise',
+                      recordId: widget.enterpriseId,
+                      onUploaded: (newEvidences) async {
+                        for (var evidence in newEvidences) {
+                          await evidenceProvider.addEvidence(evidence);
+                        }
+                        evidenceProvider.fetchEvidence(widget.enterpriseId);
+                      },
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.add_a_photo),
+                label: const Text('Add Evidence'),
+              ),
+            ),
+            if (evidences.isEmpty)
+              const Expanded(child: Center(child: Text('No evidence uploaded yet.')))
+            else
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: evidences.length,
+                  itemBuilder: (context, index) {
+                    final evidence = evidences[index];
+                    return Card(
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: Image.network(evidence.url, fit: BoxFit.cover),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(evidence.recordType),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCertificatesTab() {
+    return Consumer<GraduationProvider>(
+      builder: (context, gradProvider, _) {
+        final checklist = gradProvider.checklist;
+        if (gradProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Text('Graduation Requirements', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      _requirementTile('Baseline present', checklist?.baselinePresent ?? false),
+                      _requirementTile('Minimum 8 coaching visits', checklist?.minCoachingVisits ?? false),
+                      _requirementTile('Midline better than baseline', checklist?.midlineBetter ?? false),
+                      _requirementTile('Coach sign-off', checklist?.coachSignOff ?? false),
+                      _requirementTile('Evidence pack complete', checklist?.evidencePack ?? false),
+                      _requirementTile('M&E approval', checklist?.mAndEApproved ?? false),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (checklist != null && !checklist.mAndEApproved)
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GraduationChecklistScreen(enterpriseId: widget.enterpriseId),
+                      ),
+                    ).then((_) => gradProvider.fetchChecklist(widget.enterpriseId));
+                  },
+                  icon: const Icon(Icons.request_page),
+                  label: const Text('Request Graduation'),
+                ),
+              if (checklist != null && checklist.mAndEApproved)
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Show certificate
+                  },
+                  icon: const Icon(Icons.verified),
+                  label: const Text('View Certificate'),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _requirementTile(String label, bool isMet) {
+    return ListTile(
+      leading: Icon(isMet ? Icons.check_circle : Icons.cancel, color: isMet ? AppTheme.successColor : AppTheme.errorColor),
+      title: Text(label),
+      trailing: isMet ? const Text('Met', style: TextStyle(color: AppTheme.successColor)) : const Text('Not met', style: TextStyle(color: AppTheme.errorColor)),
+    );
+  }
+
+  Widget? _buildFloatingButton(Enterprise enterprise) {
+    final isGraduationPending = false; // TODO: check actual graduation status
+    if (!isGraduationPending) {
+      return FloatingActionButton(
+        child: const Icon(Icons.edit),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => IapEditorScreen(enterpriseId: widget.enterpriseId),
+            ),
+          ).then((_) => _loadData());
+        },
+      );
+    }
+    return null;
+  }
+
+  String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+}
+
+[======== ERRORS ========]
+Line 612, Column 5: info - Use 'const' for final variables initialized to a constant value - lib\screens\edit_profile_screen.dart:612:5 - prefer_const_declarations
+Line 626, Column 5: warning - Dead code - lib\screens\edit_profile_screen.dart:626:5 - dead_code
+
+============ lib\screens\enterprise_profile_screen.dart ============
+
+
+// import 'package:flutter/material.dart';
+// import 'package:provider/provider.dart';
+// import '../models/enterprise.dart';
+// import '../providers/enterprise_provider.dart';
+// import '../providers/assessment_provider.dart';
+// import '../providers/session_provider.dart';
+// import '../providers/iap_provider.dart';
+// import '../providers/evidence_provider.dart';
+// import '../providers/graduation_provider.dart';
+// import '../theme/app_theme2.dart';
+// import 'iap_editor_screen.dart';
+// import 'graduation_checklist_screen.dart';
+// import '../widgets/evidence_picker.dart';
+
+// class EnterpriseProfileScreen extends StatefulWidget {
+//   final String enterpriseId;
+//   const EnterpriseProfileScreen({super.key, required this.enterpriseId});
+
+//   @override
+//   State<EnterpriseProfileScreen> createState() => _EnterpriseProfileScreenState();
+// }
+
+// class _EnterpriseProfileScreenState extends State<EnterpriseProfileScreen>
+//     with SingleTickerProviderStateMixin {
+//   late TabController _tabController;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _tabController = TabController(length: 6, vsync: this);
+//     _loadData();
+//   }
+
+//   void _loadData() {
+//     Provider.of<IapProvider>(context, listen: false).fetchIap(widget.enterpriseId);
+//     Provider.of<EvidenceProvider>(context, listen: false).fetchEvidence(widget.enterpriseId);
+//     Provider.of<GraduationProvider>(context, listen: false).fetchChecklist(widget.enterpriseId);
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final enterpriseProvider = Provider.of<EnterpriseProvider>(context);
+//     final enterprise = enterpriseProvider.enterprises.firstWhere(
+//       (e) => e.id == widget.enterpriseId,
+//       orElse: () => throw Exception('Enterprise not found'),
+//     );
+
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text(enterprise.businessName),
+//         bottom: TabBar(
+//           controller: _tabController,
+//           tabs: const [
+//             Tab(text: 'Overview'),
+//             Tab(text: 'Baseline'),
+//             Tab(text: 'IAP'),
+//             Tab(text: 'Coaching'),
+//             Tab(text: 'Evidence'),
+//             Tab(text: 'Certificates'),
+//           ],
+//         ),
+//       ),
+//       body: TabBarView(
+//         controller: _tabController,
+//         children: [
+//           _buildOverviewTab(enterprise),
+//           _buildBaselineTab(enterprise),
+//           _buildIapTab(),
+//           _buildCoachingTab(),
+//           _buildEvidenceTab(),
+//           _buildCertificatesTab(),
+//         ],
+//       ),
+//       floatingActionButton: _buildFloatingButton(enterprise),
+//     );
+//   }
+
+//   Widget _buildOverviewTab(Enterprise enterprise) {
+//     return SingleChildScrollView(
+//       padding: const EdgeInsets.all(16),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           _infoCard(enterprise),
+//           const SizedBox(height: 16),
+//           _businessMetricsCard(enterprise),
+//           const SizedBox(height: 16),
+//           _scoresCard(enterprise),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _infoCard(Enterprise enterprise) {
+//     return Card(
+//       child: Padding(
+//         padding: const EdgeInsets.all(16),
+//         child: Column(
+//           children: [
+//             ListTile(
+//               leading: const Icon(Icons.person),
+//               title: const Text('Owner'),
+//               subtitle: Text(enterprise.ownerName),
+//             ),
+//             ListTile(
+//               leading: const Icon(Icons.phone),
+//               title: const Text('Phone'),
+//               subtitle: Text(enterprise.phone),
+//             ),
+//             ListTile(
+//               leading: const Icon(Icons.location_on),
+//               title: const Text('Location'),
+//               subtitle: Text(enterprise.location),
+//             ),
+//             ListTile(
+//               leading: const Icon(Icons.category),
+//               title: const Text('Sector'),
+//               subtitle: Text(enterprise.sector),
+//             ),
+//             ListTile(
+//               leading: const Icon(Icons.calendar_today),
+//               title: const Text('Registered'),
+//               subtitle: Text(_formatDate(enterprise.registrationDate)),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _businessMetricsCard(Enterprise enterprise) {
+//     return Card(
+//       child: Padding(
+//         padding: const EdgeInsets.all(16),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             const Text('Business Metrics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+//             const SizedBox(height: 12),
+//             Row(
+//               children: [
+//                 Expanded(
+//                   child: Column(
+//                     children: [
+//                       Text('Monthly Revenue', style: TextStyle(color: Colors.grey.shade600)),
+//                       const SizedBox(height: 4),
+//                       Text(
+//                         '${enterprise.baselineMonthlyRevenue?.toStringAsFixed(0) ?? '—'} ETB',
+//                         style: const TextStyle(fontWeight: FontWeight.bold),
+//                       ),
+//                       Text('Baseline', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+//                     ],
+//                   ),
+//                 ),
+//                 Expanded(
+//                   child: Column(
+//                     children: [
+//                       Text('Current', style: TextStyle(color: Colors.grey.shade600)),
+//                       const SizedBox(height: 4),
+//                       Text(
+//                         '${enterprise.currentMonthlyRevenue?.toStringAsFixed(0) ?? '—'} ETB',
+//                         style: const TextStyle(fontWeight: FontWeight.bold),
+//                       ),
+//                       const SizedBox(height: 8),
+//                       _buildChangeIndicator(
+//                         enterprise.baselineMonthlyRevenue,
+//                         enterprise.currentMonthlyRevenue,
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//               ],
+//             ),
+//             const Divider(),
+//             Row(
+//               children: [
+//                 Expanded(
+//                   child: Column(
+//                     children: [
+//                       Text('Employees', style: TextStyle(color: Colors.grey.shade600)),
+//                       const SizedBox(height: 4),
+//                       Text(
+//                         '${enterprise.baselineEmployees ?? '—'}',
+//                         style: const TextStyle(fontWeight: FontWeight.bold),
+//                       ),
+//                       Text('Baseline', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+//                     ],
+//                   ),
+//                 ),
+//                 Expanded(
+//                   child: Column(
+//                     children: [
+//                       Text('Current', style: TextStyle(color: Colors.grey.shade600)),
+//                       const SizedBox(height: 4),
+//                       Text(
+//                         '${enterprise.currentEmployees ?? '—'}',
+//                         style: const TextStyle(fontWeight: FontWeight.bold),
+//                       ),
+//                       const SizedBox(height: 8),
+//                       _buildEmployeeChange(enterprise.baselineEmployees, enterprise.currentEmployees),
+//                     ],
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _scoresCard(Enterprise enterprise) {
+//     return Card(
+//       child: Padding(
+//         padding: const EdgeInsets.all(16),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             const Text('Scores', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+//             const SizedBox(height: 12),
+//             _scoreRow('Finance', enterprise.financeScore),
+//             _scoreRow('Marketing', enterprise.marketingScore),
+//             _scoreRow('Operations', enterprise.operationsScore),
+//             _scoreRow('HR', enterprise.hrScore),
+//             _scoreRow('Governance', enterprise.governanceScore),
+//             const Divider(),
+//             _scoreRow('Overall', enterprise.overallScore, isOverall: true),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _scoreRow(String label, double score, {bool isOverall = false}) {
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(vertical: 4),
+//       child: Row(
+//         children: [
+//           SizedBox(
+//             width: 80,
+//             child: Text(label, style: TextStyle(fontWeight: isOverall ? FontWeight.bold : FontWeight.normal)),
+//           ),
+//           Expanded(
+//             child: LinearProgressIndicator(
+//               value: score / 100,
+//               backgroundColor: Colors.grey.shade200,
+//               valueColor: AlwaysStoppedAnimation<Color>(AppColors.getScoreColor(score)),
+//             ),
+//           ),
+//           const SizedBox(width: 8),
+//           Text(
+//             '${score.toInt()}%',
+//             style: TextStyle(fontWeight: isOverall ? FontWeight.bold : FontWeight.normal),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildChangeIndicator(double? baseline, double? current) {
+//     if (baseline == null || current == null) return const SizedBox.shrink();
+//     final diff = current - baseline;
+//     final percent = (diff / baseline * 100).abs().toStringAsFixed(0);
+//     final isPositive = diff >= 0;
+//     return Row(
+//       mainAxisSize: MainAxisSize.min,
+//       children: [
+//         Icon(isPositive ? Icons.trending_up : Icons.trending_down, size: 16, color: isPositive ? AppTheme.successColor : AppTheme.errorColor),
+//         const SizedBox(width: 4),
+//         Text(
+//           '$percent%',
+//           style: TextStyle(color: isPositive ? AppTheme.successColor : AppTheme.errorColor, fontWeight: FontWeight.bold),
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildEmployeeChange(int? baseline, int? current) {
+//     if (baseline == null || current == null) return const SizedBox.shrink();
+//     final diff = current - baseline;
+//     final isPositive = diff >= 0;
+//     return Row(
+//       mainAxisSize: MainAxisSize.min,
+//       children: [
+//         Icon(isPositive ? Icons.add : Icons.remove, size: 16, color: isPositive ? AppTheme.successColor : AppTheme.errorColor),
+//         const SizedBox(width: 4),
+//         Text(
+//           diff.abs().toString(),
+//           style: TextStyle(color: isPositive ? AppTheme.successColor : AppTheme.errorColor, fontWeight: FontWeight.bold),
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildBaselineTab(Enterprise enterprise) {
+//     return FutureBuilder(
+//       future: Provider.of<AssessmentProvider>(context, listen: false)
+//           .getBaselineForEnterprise(enterprise.id),
+//       builder: (context, snapshot) {
+//         if (snapshot.connectionState == ConnectionState.waiting) {
+//           return const Center(child: CircularProgressIndicator());
+//         }
+//         final baseline = snapshot.data;
+//         if (baseline == null) {
+//           return const Center(child: Text('No baseline assessment found.'));
+//         }
+//         return SingleChildScrollView(
+//           padding: const EdgeInsets.all(16),
+//           child: Column(
+//             children: [
+//               Card(
+//                 child: Padding(
+//                   padding: const EdgeInsets.all(16),
+//                   child: Column(
+//                     children: [
+//                       Text('Baseline Assessment', style: Theme.of(context).textTheme.titleLarge),
+//                       const SizedBox(height: 8),
+//                       Text('Date: ${_formatDate(baseline.date)}'),
+//                       const SizedBox(height: 16),
+//                       ...baseline.strengths.map((s) => _bulletPoint(Icons.check_circle, s, AppTheme.successColor)),
+//                       ...baseline.weaknesses.map((w) => _bulletPoint(Icons.warning, w, AppTheme.warningColor)),
+//                       const SizedBox(height: 16),
+//                       const Text('Recommendations', style: TextStyle(fontWeight: FontWeight.bold)),
+//                       ...baseline.recommendations.map((r) => _bulletPoint(Icons.lightbulb, r, Colors.amber)),
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _bulletPoint(IconData icon, String text, Color color) {
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(vertical: 4),
+//       child: Row(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Icon(icon, size: 16, color: color),
+//           const SizedBox(width: 8),
+//           Expanded(child: Text(text)),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _buildIapTab() {
+//     return Consumer<IapProvider>(
+//       builder: (context, iapProvider, _) {
+//         final iap = iapProvider.iap;
+//         if (iapProvider.isLoading) {
+//           return const Center(child: CircularProgressIndicator());
+//         }
+//         if (iap == null) {
+//           return Center(
+//             child: Column(
+//               mainAxisAlignment: MainAxisAlignment.center,
+//               children: [
+//                 const Text('No IAP found.'),
+//                 const SizedBox(height: 16),
+//                 ElevatedButton(
+//                   onPressed: () {
+//                     Navigator.push(
+//                       context,
+//                       MaterialPageRoute(
+//                         builder: (context) => IapEditorScreen(enterpriseId: widget.enterpriseId),
+//                       ),
+//                     ).then((_) => iapProvider.fetchIap(widget.enterpriseId));
+//                   },
+//                   child: const Text('Create IAP'),
+//                 ),
+//               ],
+//             ),
+//           );
+//         }
+//         return ListView.builder(
+//           padding: const EdgeInsets.all(16),
+//           itemCount: iap.tasks.length,
+//           itemBuilder: (context, index) {
+//             final task = iap.tasks[index];
+//             return Card(
+//               child: ListTile(
+//                 leading: Checkbox(
+//                   value: task.status == 'done',
+//                   onChanged: (value) {
+//                     iapProvider.updateTaskStatus(iap.id, task.id, value! ? 'done' : 'in_progress');
+//                   },
+//                 ),
+//                 title: Text(task.description),
+//                 subtitle: Text('Owner: ${task.owner} | Due: ${task.dueDate != null ? _formatDate(task.dueDate!) : 'No deadline'}'),
+//                 trailing: task.status == 'done' ? const Icon(Icons.check_circle, color: AppTheme.successColor) : null,
+//               ),
+//             );
+//           },
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildCoachingTab() {
+//     final sessions = Provider.of<SessionProvider>(context).sessions
+//         .where((s) => s.enterpriseId == widget.enterpriseId)
+//         .toList();
+//     if (sessions.isEmpty) {
+//       return const Center(child: Text('No coaching sessions yet.'));
+//     }
+//     return ListView.builder(
+//       padding: const EdgeInsets.all(16),
+//       itemCount: sessions.length,
+//       itemBuilder: (context, index) {
+//         final session = sessions[index];
+//         return Card(
+//           child: ListTile(
+//             title: Text('${session.type} - ${_formatDate(session.scheduledDate)}'),
+//             subtitle: Text(session.notes),
+//             trailing: session.isCompleted ? const Icon(Icons.check, color: AppTheme.successColor) : null,
+//             onTap: () {},
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildEvidenceTab() {
+//     return Consumer<EvidenceProvider>(
+//       builder: (context, evidenceProvider, _) {
+//         final evidences = evidenceProvider.evidences;
+//         if (evidenceProvider.isLoading) {
+//           return const Center(child: CircularProgressIndicator());
+//         }
+//         return Column(
+//           children: [
+//             Padding(
+//               padding: const EdgeInsets.all(8.0),
+//               child: ElevatedButton.icon(
+//                 onPressed: () {
+//                   showDialog(
+//                     context: context,
+//                     builder: (context) => EvidencePicker(
+//                       enterpriseId: widget.enterpriseId,
+//                       recordType: 'enterprise',
+//                       recordId: widget.enterpriseId,
+//                       onUploaded: (newEvidences) async {
+//                         for (var evidence in newEvidences) {
+//                           await evidenceProvider.addEvidence(evidence);
+//                         }
+//                         evidenceProvider.fetchEvidence(widget.enterpriseId);
+//                       },
+//                     ),
+//                   );
+//                 },
+//                 icon: const Icon(Icons.add_a_photo),
+//                 label: const Text('Add Evidence'),
+//               ),
+//             ),
+//             if (evidences.isEmpty)
+//               const Expanded(child: Center(child: Text('No evidence uploaded yet.')))
+//             else
+//               Expanded(
+//                 child: GridView.builder(
+//                   padding: const EdgeInsets.all(16),
+//                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+//                     crossAxisCount: 2,
+//                     crossAxisSpacing: 8,
+//                     mainAxisSpacing: 8,
+//                     childAspectRatio: 1,
+//                   ),
+//                   itemCount: evidences.length,
+//                   itemBuilder: (context, index) {
+//                     final evidence = evidences[index];
+//                     return Card(
+//                       child: Column(
+//                         children: [
+//                           Expanded(
+//                             child: Image.network(evidence.url, fit: BoxFit.cover),
+//                           ),
+//                           Padding(
+//                             padding: const EdgeInsets.all(8.0),
+//                             child: Text(evidence.recordType),
+//                           ),
+//                         ],
+//                       ),
+//                     );
+//                   },
+//                 ),
+//               ),
+//           ],
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildCertificatesTab() {
+//     return Consumer<GraduationProvider>(
+//       builder: (context, gradProvider, _) {
+//         final checklist = gradProvider.checklist;
+//         if (gradProvider.isLoading) {
+//           return const Center(child: CircularProgressIndicator());
+//         }
+//         return SingleChildScrollView(
+//           padding: const EdgeInsets.all(16),
+//           child: Column(
+//             children: [
+//               Card(
+//                 child: Padding(
+//                   padding: const EdgeInsets.all(16),
+//                   child: Column(
+//                     children: [
+//                       const Text('Graduation Requirements', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+//                       const SizedBox(height: 16),
+//                       _requirementTile('Baseline present', checklist?.baselinePresent ?? false),
+//                       _requirementTile('Minimum 8 coaching visits', checklist?.minCoachingVisits ?? false),
+//                       _requirementTile('Midline better than baseline', checklist?.midlineBetter ?? false),
+//                       _requirementTile('Coach sign-off', checklist?.coachSignOff ?? false),
+//                       _requirementTile('Evidence pack complete', checklist?.evidencePack ?? false),
+//                       _requirementTile('M&E approval', checklist?.mAndEApproved ?? false),
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//               const SizedBox(height: 16),
+//               if (checklist != null && !checklist.mAndEApproved)
+//                 ElevatedButton.icon(
+//                   onPressed: () {
+//                     Navigator.push(
+//                       context,
+//                       MaterialPageRoute(
+//                         builder: (context) => GraduationChecklistScreen(enterpriseId: widget.enterpriseId),
+//                       ),
+//                     ).then((_) => gradProvider.fetchChecklist(widget.enterpriseId));
+//                   },
+//                   icon: const Icon(Icons.request_page),
+//                   label: const Text('Request Graduation'),
+//                 ),
+//               if (checklist != null && checklist.mAndEApproved)
+//                 ElevatedButton.icon(
+//                   onPressed: () {
+//                     // Show certificate
+//                   },
+//                   icon: const Icon(Icons.verified),
+//                   label: const Text('View Certificate'),
+//                 ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _requirementTile(String label, bool isMet) {
+//     return ListTile(
+//       leading: Icon(isMet ? Icons.check_circle : Icons.cancel, color: isMet ? AppTheme.successColor : AppTheme.errorColor),
+//       title: Text(label),
+//       trailing: isMet ? const Text('Met', style: TextStyle(color: AppTheme.successColor)) : const Text('Not met', style: TextStyle(color: AppTheme.errorColor)),
+//     );
+//   }
+
+//   Widget? _buildFloatingButton(Enterprise enterprise) {
+//     final isGraduationPending = false; // TODO: check actual graduation status
+//     if (!isGraduationPending) {
+//       return FloatingActionButton(
+//         child: const Icon(Icons.edit),
+//         onPressed: () {
+//           Navigator.push(
+//             context,
+//             MaterialPageRoute(
+//               builder: (context) => IapEditorScreen(enterpriseId: widget.enterpriseId),
+//             ),
+//           ).then((_) => _loadData());
+//         },
+//       );
+//     }
+//     return null;
+//   }
+
+//   String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+// }
+
+
+
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/enterprise.dart';
+import '../providers/enterprise_provider.dart';
+import '../providers/assessment_provider.dart';
+import '../providers/session_provider.dart';
+import '../providers/iap_provider.dart';
+import '../providers/evidence_provider.dart';
+import '../providers/graduation_provider.dart';
+import '../theme/app_theme2.dart';
+import 'iap_editor_screen.dart';
+import 'graduation_checklist_screen.dart';
+import '../widgets/evidence_picker.dart';
+
+class EnterpriseProfileScreen extends StatefulWidget {
+  final String enterpriseId;
+  const EnterpriseProfileScreen({super.key, required this.enterpriseId});
+
+  @override
+  State<EnterpriseProfileScreen> createState() => _EnterpriseProfileScreenState();
+}
+
+class _EnterpriseProfileScreenState extends State<EnterpriseProfileScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  Enterprise? _enterprise;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 6, vsync: this);
+    _loadEnterprise();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadEnterprise() async {
+    final enterpriseProvider = Provider.of<EnterpriseProvider>(context, listen: false);
+    // Try to find in existing list
+    Enterprise? existing = enterpriseProvider.enterprises.firstWhere(
+      (e) => e.id == widget.enterpriseId,
+      orElse: () => null as Enterprise,
+    );
+    if (existing != null) {
+      setState(() {
+        _enterprise = existing;
+        _isLoading = false;
+      });
+      _loadData();
+      return;
+    }
+    // Fetch directly from Firestore
+    final fetched = await enterpriseProvider.getEnterpriseById(widget.enterpriseId);
+    if (mounted) {
+      setState(() {
+        _enterprise = fetched;
+        _isLoading = false;
+      });
+      if (fetched != null) {
+        _loadData();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Enterprise not found'), backgroundColor: AppTheme.errorColor),
+        );
+      }
+    }
+  }
+
+  void _loadData() {
+    if (_enterprise == null) return;
+    Provider.of<IapProvider>(context, listen: false).fetchIap(widget.enterpriseId);
+    Provider.of<EvidenceProvider>(context, listen: false).fetchEvidence(widget.enterpriseId);
+    Provider.of<GraduationProvider>(context, listen: false).fetchChecklist(widget.enterpriseId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_enterprise == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Enterprise Not Found')),
+        body: const Center(child: Text('Could not load enterprise details.')),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_enterprise!.businessName),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Overview'),
+            Tab(text: 'Baseline'),
+            Tab(text: 'IAP'),
+            Tab(text: 'Coaching'),
+            Tab(text: 'Evidence'),
+            Tab(text: 'Certificates'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildOverviewTab(_enterprise!),
+          _buildBaselineTab(_enterprise!),
+          _buildIapTab(),
+          _buildCoachingTab(),
+          _buildEvidenceTab(),
+          _buildCertificatesTab(),
+        ],
+      ),
+      floatingActionButton: _buildFloatingButton(_enterprise!),
+    );
+  }
+
+  Widget _buildOverviewTab(Enterprise enterprise) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _infoCard(enterprise),
+          const SizedBox(height: 16),
+          _businessMetricsCard(enterprise),
+          const SizedBox(height: 16),
+          _scoresCard(enterprise),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoCard(Enterprise enterprise) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Owner'),
+              subtitle: Text(enterprise.ownerName),
+            ),
+            ListTile(
+              leading: const Icon(Icons.phone),
+              title: const Text('Phone'),
+              subtitle: Text(enterprise.phone),
+            ),
+            ListTile(
+              leading: const Icon(Icons.location_on),
+              title: const Text('Location'),
+              subtitle: Text(enterprise.location),
+            ),
+            ListTile(
+              leading: const Icon(Icons.category),
+              title: const Text('Sector'),
+              subtitle: Text(enterprise.sector),
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('Registered'),
+              subtitle: Text(_formatDate(enterprise.registrationDate)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _businessMetricsCard(Enterprise enterprise) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Business Metrics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Monthly Revenue', style: TextStyle(color: Colors.grey.shade600)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${enterprise.baselineMonthlyRevenue?.toStringAsFixed(0) ?? '—'} ETB',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text('Baseline', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Current', style: TextStyle(color: Colors.grey.shade600)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${enterprise.currentMonthlyRevenue?.toStringAsFixed(0) ?? '—'} ETB',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildChangeIndicator(
+                        enterprise.baselineMonthlyRevenue,
+                        enterprise.currentMonthlyRevenue,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Employees', style: TextStyle(color: Colors.grey.shade600)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${enterprise.baselineEmployees ?? '—'}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text('Baseline', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text('Current', style: TextStyle(color: Colors.grey.shade600)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${enterprise.currentEmployees ?? '—'}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      _buildEmployeeChange(enterprise.baselineEmployees, enterprise.currentEmployees),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _scoresCard(Enterprise enterprise) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Scores', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            _scoreRow('Finance', enterprise.financeScore),
+            _scoreRow('Marketing', enterprise.marketingScore),
+            _scoreRow('Operations', enterprise.operationsScore),
+            _scoreRow('HR', enterprise.hrScore),
+            _scoreRow('Governance', enterprise.governanceScore),
+            const Divider(),
+            _scoreRow('Overall', enterprise.overallScore, isOverall: true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _scoreRow(String label, double score, {bool isOverall = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(label, style: TextStyle(fontWeight: isOverall ? FontWeight.bold : FontWeight.normal)),
+          ),
+          Expanded(
+            child: LinearProgressIndicator(
+              value: score / 100,
+              backgroundColor: Colors.grey.shade200,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.getScoreColor(score)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '${score.toInt()}%',
+            style: TextStyle(fontWeight: isOverall ? FontWeight.bold : FontWeight.normal),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChangeIndicator(double? baseline, double? current) {
+    if (baseline == null || current == null) return const SizedBox.shrink();
+    final diff = current - baseline;
+    final percent = (diff / baseline * 100).abs().toStringAsFixed(0);
+    final isPositive = diff >= 0;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(isPositive ? Icons.trending_up : Icons.trending_down, size: 16, color: isPositive ? AppTheme.successColor : AppTheme.errorColor),
+        const SizedBox(width: 4),
+        Text(
+          '$percent%',
+          style: TextStyle(color: isPositive ? AppTheme.successColor : AppTheme.errorColor, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmployeeChange(int? baseline, int? current) {
+    if (baseline == null || current == null) return const SizedBox.shrink();
+    final diff = current - baseline;
+    final isPositive = diff >= 0;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(isPositive ? Icons.add : Icons.remove, size: 16, color: isPositive ? AppTheme.successColor : AppTheme.errorColor),
+        const SizedBox(width: 4),
+        Text(
+          diff.abs().toString(),
+          style: TextStyle(color: isPositive ? AppTheme.successColor : AppTheme.errorColor, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBaselineTab(Enterprise enterprise) {
+    return FutureBuilder(
+      future: Provider.of<AssessmentProvider>(context, listen: false)
+          .getBaselineForEnterprise(enterprise.id),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final baseline = snapshot.data;
+        if (baseline == null) {
+          return const Center(child: Text('No baseline assessment found.'));
+        }
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text('Baseline Assessment', style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 8),
+                      Text('Date: ${_formatDate(baseline.date)}'),
+                      const SizedBox(height: 16),
+                      ...baseline.strengths.map((s) => _bulletPoint(Icons.check_circle, s, AppTheme.successColor)),
+                      ...baseline.weaknesses.map((w) => _bulletPoint(Icons.warning, w, AppTheme.warningColor)),
+                      const SizedBox(height: 16),
+                      const Text('Recommendations', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ...baseline.recommendations.map((r) => _bulletPoint(Icons.lightbulb, r, Colors.amber)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _bulletPoint(IconData icon, String text, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIapTab() {
+    return Consumer<IapProvider>(
+      builder: (context, iapProvider, _) {
+        final iap = iapProvider.iap;
+        if (iapProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (iap == null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('No IAP found.'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => IapEditorScreen(enterpriseId: widget.enterpriseId),
+                      ),
+                    ).then((_) => iapProvider.fetchIap(widget.enterpriseId));
+                  },
+                  child: const Text('Create IAP'),
+                ),
+              ],
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: iap.tasks.length,
+          itemBuilder: (context, index) {
+            final task = iap.tasks[index];
+            return Card(
+              child: ListTile(
+                leading: Checkbox(
+                  value: task.status == 'done',
+                  onChanged: (value) {
+                    iapProvider.updateTaskStatus(iap.id, task.id, value! ? 'done' : 'in_progress');
+                  },
+                ),
+                title: Text(task.description),
+                subtitle: Text('Owner: ${task.owner} | Due: ${task.dueDate != null ? _formatDate(task.dueDate!) : 'No deadline'}'),
+                trailing: task.status == 'done' ? const Icon(Icons.check_circle, color: AppTheme.successColor) : null,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCoachingTab() {
+    final sessions = Provider.of<SessionProvider>(context).sessions
+        .where((s) => s.enterpriseId == widget.enterpriseId)
+        .toList();
+    if (sessions.isEmpty) {
+      return const Center(child: Text('No coaching sessions yet.'));
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: sessions.length,
+      itemBuilder: (context, index) {
+        final session = sessions[index];
+        return Card(
+          child: ListTile(
+            title: Text('${session.type} - ${_formatDate(session.scheduledDate)}'),
+            subtitle: Text(session.notes),
+            trailing: session.isCompleted ? const Icon(Icons.check, color: AppTheme.successColor) : null,
+            onTap: () {},
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEvidenceTab() {
+    return Consumer<EvidenceProvider>(
+      builder: (context, evidenceProvider, _) {
+        final evidences = evidenceProvider.evidences;
+        if (evidenceProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => EvidencePicker(
+                      enterpriseId: widget.enterpriseId,
+                      recordType: 'enterprise',
+                      recordId: widget.enterpriseId,
+                      onUploaded: (newEvidences) async {
+                        for (var evidence in newEvidences) {
+                          await evidenceProvider.addEvidence(evidence);
+                        }
+                        evidenceProvider.fetchEvidence(widget.enterpriseId);
+                      },
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.add_a_photo),
+                label: const Text('Add Evidence'),
+              ),
+            ),
+            if (evidences.isEmpty)
+              const Expanded(child: Center(child: Text('No evidence uploaded yet.')))
+            else
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: evidences.length,
+                  itemBuilder: (context, index) {
+                    final evidence = evidences[index];
+                    return Card(
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: Image.network(evidence.url, fit: BoxFit.cover),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(evidence.recordType),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCertificatesTab() {
+    return Consumer<GraduationProvider>(
+      builder: (context, gradProvider, _) {
+        final checklist = gradProvider.checklist;
+        if (gradProvider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Text('Graduation Requirements', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      _requirementTile('Baseline present', checklist?.baselinePresent ?? false),
+                      _requirementTile('Minimum 8 coaching visits', checklist?.minCoachingVisits ?? false),
+                      _requirementTile('Midline better than baseline', checklist?.midlineBetter ?? false),
+                      _requirementTile('Coach sign-off', checklist?.coachSignOff ?? false),
+                      _requirementTile('Evidence pack complete', checklist?.evidencePack ?? false),
+                      _requirementTile('M&E approval', checklist?.mAndEApproved ?? false),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (checklist != null && !checklist.mAndEApproved)
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GraduationChecklistScreen(enterpriseId: widget.enterpriseId),
+                      ),
+                    ).then((_) => gradProvider.fetchChecklist(widget.enterpriseId));
+                  },
+                  icon: const Icon(Icons.request_page),
+                  label: const Text('Request Graduation'),
+                ),
+              if (checklist != null && checklist.mAndEApproved)
+                ElevatedButton.icon(
+                  onPressed: () {
+                    // Show certificate
+                  },
+                  icon: const Icon(Icons.verified),
+                  label: const Text('View Certificate'),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _requirementTile(String label, bool isMet) {
+    return ListTile(
+      leading: Icon(isMet ? Icons.check_circle : Icons.cancel, color: isMet ? AppTheme.successColor : AppTheme.errorColor),
+      title: Text(label),
+      trailing: isMet ? const Text('Met', style: TextStyle(color: AppTheme.successColor)) : const Text('Not met', style: TextStyle(color: AppTheme.errorColor)),
+    );
+  }
+
+  Widget? _buildFloatingButton(Enterprise enterprise) {
+    final isGraduationPending = false; // TODO: check actual graduation status
+    if (!isGraduationPending) {
+      return FloatingActionButton(
+        child: const Icon(Icons.edit),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => IapEditorScreen(enterpriseId: widget.enterpriseId),
+            ),
+          ).then((_) => _loadData());
+        },
+      );
+    }
+    return null;
+  }
+
+  String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+}
+
+[======== ERRORS ========]
+Line 631, Column 21: warning - This cast always throws an exception because the expression always evaluates to 'null' - lib\screens\enterprise_profile_screen.dart:631:21 - cast_from_null_always_fails
+Line 633, Column 18: warning - The operand can't be null, so the condition is always 'true' - lib\screens\enterprise_profile_screen.dart:633:18 - unnecessary_null_comparison
+Line 1193, Column 5: info - Use 'const' for final variables initialized to a constant value - lib\screens\enterprise_profile_screen.dart:1193:5 - prefer_const_declarations
+Line 1207, Column 5: warning - Dead code - lib\screens\enterprise_profile_screen.dart:1207:5 - dead_code
+
+============ lib\screens\enterprise_registration_form copy.dart ============
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/enterprise_provider.dart';
+import '../models/enterprise.dart';
+import '../theme/app_theme2.dart';
+import '../widgets/loading_overlay.dart';
+
+class EnterpriseRegistrationForm extends StatefulWidget {
+  const EnterpriseRegistrationForm({super.key});
+
+  @override
+  State<EnterpriseRegistrationForm> createState() => _EnterpriseRegistrationFormState();
+}
+
+class _EnterpriseRegistrationFormState extends State<EnterpriseRegistrationForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _businessNameController = TextEditingController();
+  final _ownerNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _sectorController = TextEditingController();
+  final _baselineRevenueController = TextEditingController();
+  final _baselineEmployeesController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _businessNameController.dispose();
+    _ownerNameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _locationController.dispose();
+    _sectorController.dispose();
+    _baselineRevenueController.dispose();
+    _baselineEmployeesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+      try {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final enterpriseProvider = Provider.of<EnterpriseProvider>(context, listen: false);
+        String coachId = authProvider.user?.uid ?? '';
+        double? revenue = double.tryParse(_baselineRevenueController.text);
+        int? employees = int.tryParse(_baselineEmployeesController.text);
+        Enterprise enterprise = Enterprise(
+          id: '',
+          businessName: _businessNameController.text.trim(),
+          ownerName: _ownerNameController.text.trim(),
+          sector: _sectorController.text.trim(),
+          location: _locationController.text.trim(),
+          phone: _phoneController.text.trim(),
+          status: 'Active',
+          registrationDate: DateTime.now(),
+          scores: {'finance': 0, 'marketing': 0, 'operations': 0, 'hr': 0, 'governance': 0},
+          priorities: [],
+          coachId: coachId,
+          baselineMonthlyRevenue: revenue,
+          baselineEmployees: employees,
+        );
+        await enterpriseProvider.addEnterprise(enterprise);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Enterprise registered successfully!'), backgroundColor: AppTheme.successColor, behavior: SnackBarBehavior.floating),
+          );
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor, behavior: SnackBarBehavior.floating),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LoadingOverlay(
+      isLoading: _isLoading,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Register Enterprise')),
+        body: Container(
+          color: AppTheme.backgroundColor,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Enterprise Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                      const SizedBox(height: 20),
+                      TextFormField(controller: _businessNameController, decoration: const InputDecoration(labelText: 'Business Name', prefixIcon: Icon(Icons.business, color: AppTheme.primaryColor)), validator: (v) => v == null || v.isEmpty ? 'Business name is required' : null),
+                      const SizedBox(height: 16),
+                      TextFormField(controller: _ownerNameController, decoration: const InputDecoration(labelText: 'Owner Name', prefixIcon: Icon(Icons.person, color: AppTheme.primaryColor)), validator: (v) => v == null || v.isEmpty ? 'Owner name is required' : null),
+                      const SizedBox(height: 16),
+                      TextFormField(controller: _phoneController, decoration: const InputDecoration(labelText: 'Phone', prefixIcon: Icon(Icons.phone, color: AppTheme.primaryColor)), keyboardType: TextInputType.phone, validator: (v) => v == null || v.isEmpty ? 'Phone is required' : null),
+                      const SizedBox(height: 16),
+                      TextFormField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email, color: AppTheme.primaryColor)), keyboardType: TextInputType.emailAddress, validator: (v) { if (v == null || v.isEmpty) return 'Email is required'; if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) return 'Enter a valid email'; return null; }),
+                      const SizedBox(height: 16),
+                      TextFormField(controller: _locationController, decoration: const InputDecoration(labelText: 'Location', prefixIcon: Icon(Icons.location_on, color: AppTheme.primaryColor)), validator: (v) => v == null || v.isEmpty ? 'Location is required' : null),
+                      const SizedBox(height: 16),
+                      TextFormField(controller: _sectorController, decoration: const InputDecoration(labelText: 'Sector', prefixIcon: Icon(Icons.category, color: AppTheme.primaryColor)), validator: (v) => v == null || v.isEmpty ? 'Sector is required' : null),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _baselineRevenueController,
+                        decoration: const InputDecoration(labelText: 'Baseline Monthly Revenue (ETB)', prefixIcon: Icon(Icons.attach_money, color: AppTheme.primaryColor)),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _baselineEmployeesController,
+                        decoration: const InputDecoration(labelText: 'Baseline Number of Employees', prefixIcon: Icon(Icons.people, color: AppTheme.primaryColor)),
+                        keyboardType: TextInputType.number,
+                        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _submitForm, style: ElevatedButton.styleFrom(backgroundColor: AppTheme.successColor, minimumSize: const Size(double.infinity, 50)), child: const Text('Register Enterprise'))),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+[======== ERRORS ========]
+Line 1, Column 1: info - The file name 'enterprise_registration_form copy.dart' isn't a lower_case_with_underscores identifier - lib\screens\enterprise_registration_form copy.dart:1:1 - file_names
+
+============ lib\screens\enterprises_screen copy.dart ============
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/enterprise_provider.dart';
+import 'enterprise_registration_form.dart';
+import 'enterprise_profile_screen.dart';
+import '../theme/app_theme2.dart';
+import '../widgets/enterprise_card.dart';
+import '../widgets/loading_overlay.dart';
+
+class EnterprisesScreen extends StatefulWidget {
+  const EnterprisesScreen({super.key});
+
+  @override
+  State<EnterprisesScreen> createState() => _EnterprisesScreenState();
+}
+
+class _EnterprisesScreenState extends State<EnterprisesScreen> {
+  String _searchQuery = '';
+  String _selectedFilter = 'All';
+  final List<String> _filters = ['All', 'Active', 'Graduated', 'Needs Attention'];
+
+  @override
+  Widget build(BuildContext context) {
+    final enterpriseProvider = Provider.of<EnterpriseProvider>(context);
+    List filteredEnterprises = enterpriseProvider.enterprises.where((e) {
+      final matchesSearch = e.businessName.toLowerCase().contains(_searchQuery.toLowerCase()) || e.ownerName.toLowerCase().contains(_searchQuery.toLowerCase());
+      if (_selectedFilter == 'All') return matchesSearch;
+      if (_selectedFilter == 'Active') return matchesSearch && e.status == 'Active';
+      if (_selectedFilter == 'Graduated') return matchesSearch && e.status == 'Graduated';
+      if (_selectedFilter == 'Needs Attention') return matchesSearch && e.overallScore < 50;
+      return matchesSearch;
+    }).toList();
+
+    return LoadingOverlay(
+      isLoading: enterpriseProvider.isLoading,
+      child: Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        body: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              color: Colors.white,
+              child: Column(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(color: AppTheme.backgroundColor, borderRadius: BorderRadius.circular(12)),
+                    child: TextField(onChanged: (v) => setState(() => _searchQuery = v), decoration: const InputDecoration(hintText: 'Search enterprises...', prefixIcon: Icon(Icons.search), border: InputBorder.none, contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12))),
+                  ),
+                  const SizedBox(height: 12),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _filters.map((filter) {
+                        final isSelected = _selectedFilter == filter;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            label: Text(filter),
+                            selected: isSelected,
+                            onSelected: (selected) => setState(() => _selectedFilter = filter),
+                            backgroundColor: Colors.grey.shade50,
+                            selectedColor: AppTheme.primaryColor.withOpacity(0.1),
+                            checkmarkColor: AppTheme.primaryColor,
+                            labelStyle: TextStyle(color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondary, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: filteredEnterprises.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.business_outlined, size: 64, color: Colors.grey.shade400),
+                          const SizedBox(height: 16),
+                          Text('No enterprises found', style: TextStyle(fontSize: 18, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          Text('Try adjusting your search or filters', style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: filteredEnterprises.length,
+                      itemBuilder: (context, index) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EnterpriseProfileScreen(enterpriseId: filteredEnterprises[index].id),
+                              ),
+                            );
+                          },
+                          child: EnterpriseCard(enterprise: filteredEnterprises[index], onTap: () {}),
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const EnterpriseRegistrationForm()));
+            if (result == true && mounted) {}
+          },
+          backgroundColor: AppTheme.primaryColor,
+          child: const Icon(Icons.add),
+        ),
+      ),
+    );
+  }
+}
+
+
+[======== ERRORS ========]
+Line 1, Column 1: info - The file name 'enterprises_screen copy.dart' isn't a lower_case_with_underscores identifier - lib\screens\enterprises_screen copy.dart:1:1 - file_names
+
+============ lib\screens\graduation_checklist_screen.dart ============
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/graduation_provider.dart';
+import '../providers/enterprise_provider.dart';
+import '../theme/app_theme2.dart';
+
+class GraduationChecklistScreen extends StatefulWidget {
+  final String enterpriseId;
+  const GraduationChecklistScreen({super.key, required this.enterpriseId});
+
+  @override
+  State<GraduationChecklistScreen> createState() => _GraduationChecklistScreenState();
+}
+
+class _GraduationChecklistScreenState extends State<GraduationChecklistScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<GraduationProvider>(context, listen: false).fetchChecklist(widget.enterpriseId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final gradProvider = Provider.of<GraduationProvider>(context);
+    final enterprise = Provider.of<EnterpriseProvider>(context).enterprises.firstWhere(
+          (e) => e.id == widget.enterpriseId,
+        );
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Graduation Checklist - ${enterprise.businessName}')),
+      body: gradProvider.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          const Text('Requirements', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 16),
+                          _requirementTile('Baseline present', gradProvider.checklist?.baselinePresent ?? false),
+                          _requirementTile('Minimum 8 coaching visits', gradProvider.checklist?.minCoachingVisits ?? false),
+                          _requirementTile('Midline better than baseline', gradProvider.checklist?.midlineBetter ?? false),
+                          _requirementTile('Coach sign-off', gradProvider.checklist?.coachSignOff ?? false),
+                          _requirementTile('Evidence pack complete', gradProvider.checklist?.evidencePack ?? false),
+                          _requirementTile('M&E approval', gradProvider.checklist?.mAndEApproved ?? false),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  if (gradProvider.checklist != null && !gradProvider.checklist!.mAndEApproved)
+                    ElevatedButton(
+                      onPressed: () async {
+                        try {
+                          await gradProvider.requestGraduation(widget.enterpriseId);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Graduation request submitted')),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.errorColor),
+                            );
+                          }
+                        }
+                      },
+                      child: const Text('Request Graduation'),
+                    ),
+                  if (gradProvider.checklist != null && gradProvider.checklist!.mAndEApproved)
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        // Show certificate
+                      },
+                      icon: const Icon(Icons.verified),
+                      label: const Text('View Certificate'),
+                    ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _requirementTile(String label, bool isMet) {
+    return ListTile(
+      leading: Icon(isMet ? Icons.check_circle : Icons.cancel, color: isMet ? AppTheme.successColor : AppTheme.errorColor),
+      title: Text(label),
+      trailing: isMet ? const Text('Met', style: TextStyle(color: AppTheme.successColor)) : const Text('Not met', style: TextStyle(color: AppTheme.errorColor)),
+    );
+  }
+}
+
+
+[======== ERRORS ========]
+Line 63, Column 50: info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\graduation_checklist_screen.dart:63:50 - use_build_context_synchronously
+Line 69, Column 50: info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\graduation_checklist_screen.dart:69:50 - use_build_context_synchronously
+
+============ lib\screens\iap_editor_screen.dart ============
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/iap.dart';
+import '../providers/iap_provider.dart';
+import '../theme/app_theme2.dart';
+
+class IapEditorScreen extends StatefulWidget {
+  final String enterpriseId;
+  const IapEditorScreen({super.key, required this.enterpriseId});
+
+  @override
+  State<IapEditorScreen> createState() => _IapEditorScreenState();
+}
+
+class _IapEditorScreenState extends State<IapEditorScreen> {
+  final List<IapTask> _tasks = [];
+  final _descriptionController = TextEditingController();
+  String _selectedOwner = 'coach';
+  DateTime? _dueDate;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadIap();
+  }
+
+  Future<void> _loadIap() async {
+    final provider = Provider.of<IapProvider>(context, listen: false);
+    await provider.fetchIap(widget.enterpriseId);
+    if (provider.iap != null) {
+      setState(() {
+        _tasks.clear();
+        _tasks.addAll(provider.iap!.tasks);
+      });
+    }
+  }
+
+  void _addTask() {
+    if (_descriptionController.text.trim().isEmpty) return;
+    setState(() {
+      _tasks.add(IapTask(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        description: _descriptionController.text.trim(),
+        owner: _selectedOwner,
+        dueDate: _dueDate,
+        status: 'not_started',
+      ));
+      _descriptionController.clear();
+      _dueDate = null;
+    });
+  }
+
+  void _removeTask(int index) {
+    setState(() {
+      _tasks.removeAt(index);
+    });
+  }
+
+  Future<void> _saveIap() async {
+    setState(() => _isLoading = true);
+    final provider = Provider.of<IapProvider>(context, listen: false);
+    final iap = Iap(
+      id: provider.iap?.id ?? '',
+      enterpriseId: widget.enterpriseId,
+      tasks: _tasks,
+      coachSigned: provider.iap?.coachSigned ?? false,
+      enterpriseSigned: provider.iap?.enterpriseSigned ?? false,
+      updatedAt: DateTime.now(),
+    );
+    try {
+      await provider.saveIap(iap);
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _selectDueDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 7)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (date != null) setState(() => _dueDate = date);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Individual Action Plan'),
+        actions: [
+          TextButton(
+            onPressed: _saveIap,
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Task Description',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: _selectedOwner,
+                      decoration: const InputDecoration(labelText: 'Responsible'),
+                      items: const [
+                        DropdownMenuItem(value: 'coach', child: Text('Coach')),
+                        DropdownMenuItem(value: 'enterprise', child: Text('Enterprise')),
+                      ],
+                      onChanged: (v) => setState(() => _selectedOwner = v!),
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: _selectDueDate,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(labelText: 'Due Date'),
+                        child: Text(_dueDate != null ? _formatDate(_dueDate!) : 'Select date'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _addTask,
+                      child: const Text('Add Task'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _tasks.length,
+              itemBuilder: (context, index) {
+                final task = _tasks[index];
+                return Card(
+                  child: ListTile(
+                    title: Text(task.description),
+                    subtitle: Text('Owner: ${task.owner} | Due: ${task.dueDate != null ? _formatDate(task.dueDate!) : 'No deadline'}'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: AppTheme.errorColor),
+                      onPressed: () => _removeTask(index),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+}
+
+
+[======== ERRORS ========]
+Line 20, Column 8: warning - The value of the field '_isLoading' isn't used - lib\screens\iap_editor_screen.dart:20:8 - unused_field
+Line 75, Column 28: info - Don't use 'BuildContext's across async gaps - lib\screens\iap_editor_screen.dart:75:28 - use_build_context_synchronously
+
+============ lib\screens\profile_screen.dart ============
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../theme/app_theme2.dart';
+import 'login_screen.dart';
+import 'edit_profile_screen.dart';
+
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final coach = authProvider.coach;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen())).then((updated) {
+                if (updated == true && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Profile updated successfully!'), backgroundColor: AppTheme.successColor, behavior: SnackBarBehavior.floating),
+                  );
+                }
+              });
+            },
+          ),
+        ],
+      ),
+      backgroundColor: AppTheme.backgroundColor,
+      body: coach == null
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+                      boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+                    ),
+                    child: Column(
+                      children: [
+                        Stack(
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), shape: BoxShape.circle),
+                              child: Center(child: Text(coach.fullName.isNotEmpty ? coach.fullName[0] : 'C', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppTheme.primaryColor))),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: AppTheme.secondaryColor, shape: BoxShape.circle), child: const Icon(Icons.camera_alt, size: 20, color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(coach.fullName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                        const SizedBox(height: 4),
+                        Text(coach.email, style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                          child: Text('Username: ${coach.username}', style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Personal Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                          child: Column(
+                            children: [
+                              _buildInfoRow(Icons.phone, 'Phone', coach.phone),
+                              const Divider(height: 24),
+                              _buildInfoRow(Icons.badge, 'National ID', coach.nationalId),
+                              const Divider(height: 24),
+                              _buildInfoRow(Icons.school, 'Education Level', coach.educationLevel + (coach.educationOther != null ? ' - ${coach.educationOther}' : '')),
+                              const Divider(height: 24),
+                              _buildInfoRow(Icons.science, 'Field of Study', coach.fieldOfStudy + (coach.fieldOfStudyOther != null ? ' - ${coach.fieldOfStudyOther}' : '')),
+                              const Divider(height: 24),
+                              _buildInfoRow(Icons.work, 'Years of Experience', '${coach.yearsOfExperience} years'),
+                              const Divider(height: 24),
+                              _buildInfoRow(Icons.verified, 'Has Certification', coach.hasCertification ? 'Yes' : 'No'),
+                              if (coach.hasCertification && coach.certificationUrl != null) ...[
+                                const Divider(height: 24),
+                                _buildInfoRow(Icons.link, 'Certification URL', coach.certificationUrl!),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text('Location Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                          child: Column(
+                            children: [
+                              _buildInfoRow(Icons.location_on, 'Region', coach.region),
+                              const Divider(height: 24),
+                              _buildInfoRow(Icons.location_city, 'Zone', coach.zone),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text('Account Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                          child: Column(
+                            children: [
+                              _buildInfoRow(Icons.person, 'Username', coach.username),
+                              const Divider(height: 24),
+                              _buildInfoRow(Icons.email, 'Email', coach.email),
+                              const Divider(height: 24),
+                              _buildInfoRow(Icons.supervisor_account, 'Supervisor', coach.supervisorName.isNotEmpty ? coach.supervisorName : 'Not assigned'),
+                              const Divider(height: 24),
+                              _buildInfoRow(Icons.calendar_today, 'Member Since', '${coach.createdAt.day}/${coach.createdAt.month}/${coach.createdAt.year}'),
+                              const Divider(height: 24),
+                              _buildInfoRow(Icons.check_circle, 'Account Status', coach.accountStatus, valueColor: coach.accountStatus == 'active' ? AppTheme.successColor : AppTheme.warningColor),
+                              const Divider(height: 24),
+                              _buildInfoRow(Icons.login, 'First Login', coach.isFirstLogin ? 'Yes' : 'No'),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text('Account Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                        const SizedBox(height: 16),
+                        Container(
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                          child: Column(
+                            children: [
+                              _buildSettingTile(Icons.lock, 'Change Password', onTap: () {}),
+                              _buildSettingTile(Icons.notifications, 'Notifications', onTap: () {}, showDivider: true),
+                              _buildSettingTile(Icons.language, 'Language', value: 'English', onTap: () {}, showDivider: true),
+                              _buildSettingTile(Icons.security, 'Privacy & Security', onTap: () {}, showDivider: true),
+                              _buildSettingTile(Icons.info, 'About', value: 'Version 1.0.0', onTap: () {}),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Sign Out'),
+                                  content: const Text('Are you sure you want to sign out?'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                                    TextButton(
+                                      onPressed: () async {
+                                        await authProvider.signOut();
+                                        if (context.mounted) Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
+                                      },
+                                      child: const Text('Sign Out', style: TextStyle(color: AppTheme.errorColor)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor.withOpacity(0.1), foregroundColor: AppTheme.errorColor, elevation: 0),
+                            child: const Text('Sign Out'),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value, {Color? valueColor}) {
+    return Row(
+      children: [
+        Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Icon(icon, size: 16, color: AppTheme.primaryColor)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              const SizedBox(height: 2),
+              Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: valueColor ?? AppTheme.textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSettingTile(IconData icon, String label, {String? value, required VoidCallback onTap, bool showDivider = false}) {
+    return Column(
+      children: [
+        ListTile(
+          leading: Icon(icon, color: AppTheme.textSecondary, size: 20),
+          title: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppTheme.textPrimary)),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (value != null) Text(value, style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+            ],
+          ),
+          onTap: onTap,
+        ),
+        if (showDivider) Padding(padding: const EdgeInsets.only(left: 56), child: Divider(height: 0, color: Colors.grey.shade100)),
+      ],
+    );
+  }
+}
+
+
+[======== ERRORS ========]
+Line 6, Column 8: warning - Unused import: 'edit_profile_screen.dart' - lib\screens\profile_screen.dart:6:8 - unused_import
+Line 23, Column 85: error - The name 'EditProfileScreen' isn't a class - lib\screens\profile_screen.dart:23:85 - creation_with_non_type
+
+============ lib\screens\register_coach_from.dart ============
+
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/coach_model.dart';
+import '../theme/app_theme2.dart';
+
+class RegisterCoachForm extends StatefulWidget {
+  final String supervisorId;
+  final String supervisorName;
+  const RegisterCoachForm({super.key, required this.supervisorId, required this.supervisorName});
+
+  @override
+  State<RegisterCoachForm> createState() => _RegisterCoachFormState();
+}
+
+class _RegisterCoachFormState extends State<RegisterCoachForm> {
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  int _currentStep = 0;
+
+  final _fullNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _nationalIdController = TextEditingController();
+  final _yearsOfExperienceController = TextEditingController();
+  final _fieldOfStudyOtherController = TextEditingController();
+  final _educationOtherController = TextEditingController();
+  final _certificationUrlController = TextEditingController();
+  final _zoneController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  String? _selectedGender;
+  String? _selectedEducationLevel;
+  String? _selectedFieldOfStudy;
+  String? _selectedRegion;
+  String? _selectedAccountStatus = 'active';
+  DateTime? _selectedDateOfBirth;
+  bool _hasCertification = false;
+
+  final List<String> _genders = ['Male', 'Female', 'Other'];
+  final List<String> _educationLevels = ['Diploma', 'Bachelor', 'Master', 'PhD', 'Other'];
+  final List<String> _fieldsOfStudy = ['Computer Science', 'Business', 'Economics', 'Management', 'Finance', 'Education', 'Other'];
+  final List<String> _regions = ['Addis Ababa', 'Oromia', 'Amhara', 'Tigray', 'Sidama', 'SNNPR', 'Harari', 'Gambella', 'Benishangul-Gumuz'];
+  final List<String> _accountStatuses = ['active', 'inactive'];
+
+  Future<void> _selectDateOfBirth() async {
+    final DateTime? picked = await showDatePicker(context: context, initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)), firstDate: DateTime(1900), lastDate: DateTime.now());
+    if (picked != null) setState(() => _selectedDateOfBirth = picked);
+  }
+
+  void _nextStep() => setState(() => _currentStep++);
+  void _previousStep() => setState(() => _currentStep--);
+
+  Future<void> _registerCoach() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Passwords do not match'), backgroundColor: AppTheme.errorColor));
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+      final emailQuery = await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: _emailController.text.trim()).get();
+      if (emailQuery.docs.isNotEmpty) throw 'Email already registered';
+      final usernameQuery = await FirebaseFirestore.instance.collection('users').where('username', isEqualTo: _usernameController.text.trim()).get();
+      if (usernameQuery.docs.isNotEmpty) throw 'Username already taken';
+      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: _emailController.text.trim(), password: _passwordController.text);
+      final coach = Coach(
+        id: userCredential.user!.uid,
+        fullName: _fullNameController.text.trim(),
+        gender: _selectedGender!,
+        dateOfBirth: _selectedDateOfBirth,
+        phone: _phoneController.text.trim(),
+        email: _emailController.text.trim(),
+        nationalId: _nationalIdController.text.trim(),
+        educationLevel: _selectedEducationLevel!,
+        educationOther: _selectedEducationLevel == 'Other' ? _educationOtherController.text.trim() : null,
+        fieldOfStudy: _selectedFieldOfStudy!,
+        fieldOfStudyOther: _selectedFieldOfStudy == 'Other' ? _fieldOfStudyOtherController.text.trim() : null,
+        yearsOfExperience: int.parse(_yearsOfExperienceController.text),
+        hasCertification: _hasCertification,
+        certificationUrl: _hasCertification ? _certificationUrlController.text.trim() : null,
+        region: _selectedRegion!,
+        zone: _zoneController.text.trim(),
+        username: _usernameController.text.trim(),
+        password: _passwordController.text,
+        accountStatus: _selectedAccountStatus!,
+        supervisorId: widget.supervisorId,
+        supervisorName: widget.supervisorName,
+        createdAt: DateTime.now(),
+        isFirstLogin: true,
+      );
+      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set(coach.toMap());
+      if (mounted) _showSuccessDialog();
+    } on FirebaseAuthException catch (e) {
+      String message = 'Registration failed';
+      if (e.code == 'email-already-in-use') message = 'Email already in use';
+      else if (e.code == 'weak-password') message = 'Password is too weak';
+      _showErrorDialog(message);
+    } catch (e) {
+      _showErrorDialog(e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Icon(Icons.check_circle, color: AppTheme.successColor, size: 60),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Registration Successful!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+              child: Column(
+                children: [
+                  _buildInfoRow('Username', _usernameController.text),
+                  const Divider(),
+                  _buildInfoRow('Password', _passwordController.text),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text('Please share these credentials with the coach securely', style: TextStyle(fontSize: 12, color: Colors.grey), textAlign: TextAlign.center),
+          ],
+        ),
+        actions: [TextButton(onPressed: () { Navigator.pop(context); Navigator.pop(context, true); }, child: const Text('OK'))],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('$label:', style: const TextStyle(fontWeight: FontWeight.bold)), Text(value)]));
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Icon(Icons.error, color: AppTheme.errorColor, size: 50),
+        content: Text(message),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Register New Coach', style: TextStyle(color: Colors.white)), backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white, leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.of(context).pop())),
+      body: Stack(
+        children: [
+          Container(
+            color: AppTheme.backgroundColor,
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.white,
+                  child: Row(
+                    children: [
+                      _buildStepIndicator(0, 'Personal'), _buildStepLine(),
+                      _buildStepIndicator(1, 'Professional'), _buildStepLine(),
+                      _buildStepIndicator(2, 'Location'), _buildStepLine(),
+                      _buildStepIndicator(3, 'Account'),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Form(
+                    key: _formKey,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          if (_currentStep == 0) _buildPersonalInfoSection(),
+                          if (_currentStep == 1) _buildProfessionalInfoSection(),
+                          if (_currentStep == 2) _buildLocationInfoSection(),
+                          if (_currentStep == 3) _buildAccountInfoSection(),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              if (_currentStep > 0) Expanded(child: OutlinedButton(onPressed: _previousStep, style: OutlinedButton.styleFrom(foregroundColor: AppTheme.primaryColor, side: const BorderSide(color: AppTheme.primaryColor), minimumSize: const Size(double.infinity, 50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('Previous'))),
+                              if (_currentStep > 0) const SizedBox(width: 12),
+                              Expanded(child: ElevatedButton(onPressed: _currentStep < 3 ? _nextStep : _registerCoach, style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: Text(_currentStep < 3 ? 'Next' : 'Submit'))),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_isLoading) Container(color: Colors.black54, child: const Center(child: Card(child: Padding(padding: EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Creating coach account...')]))))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepIndicator(int step, String label) {
+    bool isActive = _currentStep == step;
+    bool isCompleted = _currentStep > step;
+    return Expanded(
+      child: Column(
+        children: [
+          Container(width: 30, height: 30, decoration: BoxDecoration(shape: BoxShape.circle, color: isCompleted ? AppTheme.successColor : isActive ? AppTheme.primaryColor : Colors.grey.shade300),
+            child: Center(child: isCompleted ? const Icon(Icons.check, color: Colors.white, size: 16) : Text('${step + 1}', style: TextStyle(color: isActive ? Colors.white : Colors.grey.shade600, fontWeight: FontWeight.bold))),
+          ),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 12, color: isActive ? AppTheme.primaryColor : Colors.grey, fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepLine() => Container(width: 20, height: 2, color: Colors.grey.shade300);
+
+  Widget _buildPersonalInfoSection() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.person, color: AppTheme.primaryColor)), const SizedBox(width: 12), const Text('Personal Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+            const SizedBox(height: 20),
+            TextFormField(controller: _fullNameController, decoration: InputDecoration(labelText: 'Full Name', prefixIcon: const Icon(Icons.person_outline, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), validator: (v) => v == null || v.isEmpty ? 'Full name is required' : null),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(value: _selectedGender, decoration: InputDecoration(labelText: 'Gender', prefixIcon: const Icon(Icons.transgender, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), items: _genders.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(), onChanged: (v) => setState(() => _selectedGender = v), validator: (v) => v == null ? 'Gender is required' : null),
+            const SizedBox(height: 16),
+            InkWell(onTap: _selectDateOfBirth, child: InputDecorator(decoration: InputDecoration(labelText: 'Date of Birth', prefixIcon: const Icon(Icons.calendar_today, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), child: Text(_selectedDateOfBirth != null ? '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}' : 'Select date of birth'))),
+            const SizedBox(height: 16),
+            TextFormField(controller: _phoneController, decoration: InputDecoration(labelText: 'Phone Number', prefixIcon: const Icon(Icons.phone_outlined, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), keyboardType: TextInputType.phone, validator: (v) => v == null || v.isEmpty ? 'Phone number is required' : null),
+            const SizedBox(height: 16),
+            TextFormField(controller: _emailController, decoration: InputDecoration(labelText: 'Email', prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), keyboardType: TextInputType.emailAddress, validator: (v) { if (v == null || v.isEmpty) return 'Email is required'; if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) return 'Enter a valid email'; return null; }),
+            const SizedBox(height: 16),
+            TextFormField(controller: _nationalIdController, decoration: InputDecoration(labelText: 'National ID', prefixIcon: const Icon(Icons.badge_outlined, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), validator: (v) => v == null || v.isEmpty ? 'National ID is required' : null),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfessionalInfoSection() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.work, color: AppTheme.primaryColor)), const SizedBox(width: 12), const Text('Professional Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<String>(value: _selectedEducationLevel, decoration: InputDecoration(labelText: 'Education Level', prefixIcon: const Icon(Icons.school_outlined, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), items: _educationLevels.map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(), onChanged: (v) => setState(() => _selectedEducationLevel = v), validator: (v) => v == null ? 'Education level is required' : null),
+            if (_selectedEducationLevel == 'Other') ...[
+              const SizedBox(height: 8),
+              TextFormField(controller: _educationOtherController, decoration: InputDecoration(labelText: 'Specify Education Level', prefixIcon: const Icon(Icons.edit, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+            ],
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(value: _selectedFieldOfStudy, decoration: InputDecoration(labelText: 'Field of Study', prefixIcon: const Icon(Icons.science_outlined, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), items: _fieldsOfStudy.map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(), onChanged: (v) => setState(() => _selectedFieldOfStudy = v), validator: (v) => v == null ? 'Field of study is required' : null),
+            if (_selectedFieldOfStudy == 'Other') ...[
+              const SizedBox(height: 8),
+              TextFormField(controller: _fieldOfStudyOtherController, decoration: InputDecoration(labelText: 'Specify Field of Study', prefixIcon: const Icon(Icons.edit, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+            ],
+            const SizedBox(height: 16),
+            TextFormField(controller: _yearsOfExperienceController, decoration: InputDecoration(labelText: 'Years of Experience', prefixIcon: const Icon(Icons.timeline_outlined, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), keyboardType: TextInputType.number, validator: (v) { if (v == null || v.isEmpty) return 'Years of experience is required'; if (int.tryParse(v) == null) return 'Enter a valid number'; return null; }),
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(12)),
+              child: CheckboxListTile(title: const Text('Has Coaching Certification'), value: _hasCertification, onChanged: (v) => setState(() => _hasCertification = v ?? false), controlAffinity: ListTileControlAffinity.leading, secondary: Icon(Icons.verified_outlined, color: _hasCertification ? AppTheme.successColor : AppTheme.textSecondary)),
+            ),
+            if (_hasCertification) ...[
+              const SizedBox(height: 16),
+              TextFormField(controller: _certificationUrlController, decoration: InputDecoration(labelText: 'Certification URL', prefixIcon: const Icon(Icons.link, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationInfoSection() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.location_on, color: AppTheme.primaryColor)), const SizedBox(width: 12), const Text('Location Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<String>(value: _selectedRegion, decoration: InputDecoration(labelText: 'Region', prefixIcon: const Icon(Icons.map_outlined, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), items: _regions.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(), onChanged: (v) => setState(() => _selectedRegion = v), validator: (v) => v == null ? 'Region is required' : null),
+            const SizedBox(height: 16),
+            TextFormField(controller: _zoneController, decoration: InputDecoration(labelText: 'Zone / District', prefixIcon: const Icon(Icons.location_city_outlined, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), validator: (v) => v == null || v.isEmpty ? 'Zone/District is required' : null),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountInfoSection() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.computer, color: AppTheme.primaryColor)), const SizedBox(width: 12), const Text('Account Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+            const SizedBox(height: 20),
+            TextFormField(controller: _usernameController, decoration: InputDecoration(labelText: 'Username', prefixIcon: const Icon(Icons.person_outline, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), validator: (v) { if (v == null || v.isEmpty) return 'Username is required'; if (v.length < 4) return 'Username must be at least 4 characters'; return null; }),
+            const SizedBox(height: 16),
+            TextFormField(controller: _passwordController, decoration: InputDecoration(labelText: 'Temporary Password', prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), suffixIcon: IconButton(icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off), onPressed: () => setState(() => _obscurePassword = !_obscurePassword))), obscureText: _obscurePassword, validator: (v) { if (v == null || v.isEmpty) return 'Password is required'; if (v.length < 6) return 'Password must be at least 6 characters'; return null; }),
+            const SizedBox(height: 16),
+            TextFormField(controller: _confirmPasswordController, decoration: InputDecoration(labelText: 'Confirm Password', prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), suffixIcon: IconButton(icon: Icon(_obscureConfirmPassword ? Icons.visibility : Icons.visibility_off), onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword))), obscureText: _obscureConfirmPassword, validator: (v) { if (v == null || v.isEmpty) return 'Please confirm password'; return null; }),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(value: _selectedAccountStatus, decoration: InputDecoration(labelText: 'Account Status', prefixIcon: const Icon(Icons.toggle_on_outlined, color: AppTheme.primaryColor), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), items: _accountStatuses.map((status) => DropdownMenuItem(value: status, child: Row(children: [Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: status == 'active' ? AppTheme.successColor : AppTheme.errorColor)), const SizedBox(width: 8), Text(status)]))).toList(), onChanged: (v) => setState(() => _selectedAccountStatus = v), validator: (v) => v == null ? 'Account status is required' : null),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+              child: Row(
+                children: [
+                  Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.supervisor_account, color: AppTheme.primaryColor)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Supervisor', style: TextStyle(fontSize: 12, color: Colors.grey)), Text(widget.supervisorName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))])),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _nationalIdController.dispose();
+    _yearsOfExperienceController.dispose();
+    _fieldOfStudyOtherController.dispose();
+    _educationOtherController.dispose();
+    _certificationUrlController.dispose();
+    _zoneController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+}
+
+
+[======== ERRORS ========]
+Line 100, Column 45: info - Statements in an if should be enclosed in a block - lib\screens\register_coach_from.dart:100:45 - curly_braces_in_flow_control_structures
+Line 101, Column 43: info - Statements in an if should be enclosed in a block - lib\screens\register_coach_from.dart:101:43 - curly_braces_in_flow_control_structures
+
+============ lib\screens\training_scheduler_screen.dart ============
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/training.dart';
+import '../providers/training_provider.dart';
+import '../theme/app_theme2.dart';
+
+class TrainingSchedulerScreen extends StatefulWidget {
+  const TrainingSchedulerScreen({super.key});
+
+  @override
+  State<TrainingSchedulerScreen> createState() => _TrainingSchedulerScreenState();
+}
+
+class _TrainingSchedulerScreenState extends State<TrainingSchedulerScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _moduleController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _maxSeatsController = TextEditingController();
+  DateTime? _selectedDate;
+  bool _isLoading = false;
+
+  Future<void> _selectDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 7)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (date != null) setState(() => _selectedDate = date);
+  }
+
+  Future<void> _createTraining() async {
+    if (_formKey.currentState!.validate() && _selectedDate != null) {
+      setState(() => _isLoading = true);
+      final provider = Provider.of<TrainingProvider>(context, listen: false);
+      final training = Training(
+        id: '',
+        title: _titleController.text.trim(),
+        module: _moduleController.text.trim(),
+        date: _selectedDate!,
+        location: _locationController.text.trim(),
+        trainerId: '', // TODO: get from auth
+        maxSeats: int.tryParse(_maxSeatsController.text) ?? 0,
+        createdAt: DateTime.now(),
+      );
+      try {
+        await provider.createTraining(training);
+        if (mounted) Navigator.pop(context, true);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor),
+        );
+      } finally {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Schedule Training')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: 'Title'),
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _moduleController,
+                decoration: const InputDecoration(labelText: 'Module'),
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: _selectDate,
+                child: InputDecorator(
+                  decoration: const InputDecoration(labelText: 'Date'),
+                  child: Text(_selectedDate != null ? _formatDate(_selectedDate!) : 'Select date'),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(labelText: 'Location'),
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _maxSeatsController,
+                decoration: const InputDecoration(labelText: 'Max Seats'),
+                keyboardType: TextInputType.number,
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _createTraining,
+                child: _isLoading ? const CircularProgressIndicator() : const Text('Schedule'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+}
+
+
+[======== ERRORS ========]
+Line 51, Column 30: info - Don't use 'BuildContext's across async gaps - lib\screens\training_scheduler_screen.dart:51:30 - use_build_context_synchronously
+
+============ lib\screens\training_session_screen.dart ============
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/training.dart';
+import '../providers/training_provider.dart';
+import 'attendance_capture_screen.dart';
+import 'feedback_form_screen.dart';
+
+class TrainingSessionScreen extends StatelessWidget {
+  final Training training;
+  const TrainingSessionScreen({super.key, required this.training});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(training.title)),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.category),
+                      title: const Text('Module'),
+                      subtitle: Text(training.module),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.calendar_today),
+                      title: const Text('Date'),
+                      subtitle: Text('${training.date.day}/${training.date.month}/${training.date.year}'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.location_on),
+                      title: const Text('Location'),
+                      subtitle: Text(training.location),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.people),
+                      title: const Text('Max Seats'),
+                      subtitle: Text('${training.maxSeats}'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AttendanceCaptureScreen(trainingId: training.id),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.qr_code_scanner),
+                    label: const Text('Mark Attendance'),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FeedbackFormScreen(trainingId: training.id),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.feedback),
+                    label: const Text('Give Feedback'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+[======== ERRORS ========]
+Line 2, Column 8: warning - Unused import: 'package:provider/provider.dart' - lib\screens\training_session_screen.dart:2:8 - unused_import
+Line 4, Column 8: warning - Unused import: '../providers/training_provider.dart' - lib\screens\training_session_screen.dart:4:8 - unused_import
+
+============ lib\services\firestore_service copy.dart ============
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../models/enterprise.dart';
+import '../models/assessment.dart';
+import '../models/session.dart';
+import '../models/iap.dart';
+import '../models/training.dart';
+import '../models/attendance.dart';
+import '../models/feedback.dart';
+import '../models/evidence.dart';
+import '../models/qc_check.dart';
+import '../models/graduation_checklist.dart';
+
+class FirestoreService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // User management
+  Future<void> createUserData(String uid, Map<String, dynamic> userData) async {
+    await _firestore.collection('users').doc(uid).set(userData);
+  }
+
+  Future<Map<String, dynamic>?> getUserData(String uid) async {
+    DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
+    return doc.data() as Map<String, dynamic>?;
+  }
+
+  Future<void> updateUserData(String uid, Map<String, dynamic> updates) async {
+    await _firestore.collection('users').doc(uid).update(updates);
+  }
+
+  // Enterprises
+  Stream<List<Enterprise>> getEnterprisesStream() {
+    String? uid = _auth.currentUser?.uid;
+    if (uid == null) return Stream.value([]);
+    return _firestore.collection('enterprises').where('coachId', isEqualTo: uid).snapshots().map((snapshot) => snapshot.docs.map((doc) => Enterprise.fromMap(doc.id, doc.data())).toList());
+  }
+
+  Future<void> addEnterprise(Enterprise enterprise) async {
+    await _firestore.collection('enterprises').add(enterprise.toMap());
+  }
+
+  Future<void> updateEnterprise(String id, Map<String, dynamic> data) async {
+    await _firestore.collection('enterprises').doc(id).update(data);
+  }
+
+  Future<void> deleteEnterprise(String id) async {
+    await _firestore.collection('enterprises').doc(id).delete();
+  }
+
+  // Assessments
+  Stream<List<Assessment>> getAssessmentsStream() {
+    String? uid = _auth.currentUser?.uid;
+    if (uid == null) return Stream.value([]);
+    return _firestore.collection('assessments').where('coachId', isEqualTo: uid).orderBy('date', descending: true).snapshots().map((snapshot) => snapshot.docs.map((doc) => Assessment.fromMap(doc.id, doc.data())).toList());
+  }
+
+  Future<void> addAssessment(Assessment assessment) async {
+    final docRef = await _firestore.collection('assessments').add(assessment.toMap());
+    // Create QC check for baseline
+    if (assessment.type == 'Baseline') {
+      await createQcCheck('baseline_form', docRef.id);
+    }
+  }
+
+  Future<void> updateAssessment(String id, Map<String, dynamic> data) async {
+    await _firestore.collection('assessments').doc(id).update(data);
+  }
+
+  Future<void> deleteAssessment(String id) async {
+    await _firestore.collection('assessments').doc(id).delete();
+  }
+
+  Future<Assessment?> getBaselineForEnterprise(String enterpriseId) async {
+    final snapshot = await _firestore
+        .collection('assessments')
+        .where('enterpriseId', isEqualTo: enterpriseId)
+        .where('type', isEqualTo: 'Baseline')
+        .limit(1)
+        .get();
+    if (snapshot.docs.isEmpty) return null;
+    return Assessment.fromMap(snapshot.docs.first.id, snapshot.docs.first.data());
+  }
+
+  // Sessions
+  Stream<List<CoachingSession>> getSessionsStream() {
+    String? uid = _auth.currentUser?.uid;
+    if (uid == null) return Stream.value([]);
+    return _firestore.collection('sessions').where('coachId', isEqualTo: uid).orderBy('scheduledDate', descending: true).snapshots().map((snapshot) => snapshot.docs.map((doc) => CoachingSession.fromMap(doc.id, doc.data())).toList());
+  }
+
+  Future<void> addSession(CoachingSession session) async {
+    await _firestore.collection('sessions').add(session.toMap());
+  }
+
+  Future<void> updateSession(String id, Map<String, dynamic> data) async {
+    await _firestore.collection('sessions').doc(id).update(data);
+  }
+
+  Future<void> deleteSession(String id) async {
+    await _firestore.collection('sessions').doc(id).delete();
+  }
+
+  // IAP
+  Future<Iap?> getIap(String enterpriseId) async {
+    final snapshot = await _firestore
+        .collection('iaps')
+        .where('enterpriseId', isEqualTo: enterpriseId)
+        .limit(1)
+        .get();
+    if (snapshot.docs.isEmpty) return null;
+    return Iap.fromMap(snapshot.docs.first.id, snapshot.docs.first.data());
+  }
+
+  Future<void> saveIap(Iap iap) async {
+    final data = iap.toMap();
+    if (iap.id.isEmpty) {
+      await _firestore.collection('iaps').add(data);
+    } else {
+      await _firestore.collection('iaps').doc(iap.id).update(data);
+    }
+  }
+
+  Future<void> updateIapTaskStatus(String iapId, String taskId, String newStatus) async {
+    final docRef = _firestore.collection('iaps').doc(iapId);
+    final doc = await docRef.get();
+    final data = doc.data()!;
+    final tasks = List<Map<String, dynamic>>.from(data['tasks'] ?? []);
+    final index = tasks.indexWhere((t) => t['id'] == taskId);
+    if (index != -1) {
+      tasks[index]['status'] = newStatus;
+      if (newStatus == 'done') {
+        tasks[index]['completedAt'] = Timestamp.now();
+      }
+      await docRef.update({'tasks': tasks, 'updatedAt': Timestamp.now()});
+    }
+  }
+
+  // Training
+  Stream<List<Training>> getTrainingsStream() {
+    return _firestore.collection('trainings').snapshots().map((snapshot) =>
+        snapshot.docs.map((doc) => Training.fromMap(doc.id, doc.data())).toList());
+  }
+
+  Future<void> addTraining(Training training) async {
+    await _firestore.collection('trainings').add(training.toMap());
+  }
+
+  Future<void> markAttendance(String trainingId, String enterpriseId, String attendeeName, bool qrScanned) async {
+    final attendance = Attendance(
+      id: '',
+      trainingId: trainingId,
+      enterpriseId: enterpriseId,
+      attendeeName: attendeeName,
+      present: true,
+      checkedInAt: DateTime.now(),
+      qrCodeScanned: qrScanned,
+    );
+    await _firestore.collection('attendance').add(attendance.toMap());
+  }
+
+  Future<void> addFeedback(Feedback feedback) async {
+    await _firestore.collection('feedback').add(feedback.toMap());
+  }
+
+  // Evidence
+  Stream<List<Evidence>> getEvidenceStream(String enterpriseId) {
+    return _firestore
+        .collection('evidence')
+        .where('enterpriseId', isEqualTo: enterpriseId)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => Evidence.fromMap(doc.id, doc.data())).toList());
+  }
+
+  Future<void> addEvidence(Evidence evidence) async {
+    await _firestore.collection('evidence').add(evidence.toMap());
+  }
+
+  // QC
+  Stream<List<QcCheck>> getPendingQcStream() {
+    return _firestore
+        .collection('qc_checks')
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => QcCheck.fromMap(doc.id, doc.data()))
+            .toList());
+  }
+
+  Future<void> createQcCheck(String recordType, String recordId) async {
+    final qc = QcCheck(
+      id: '',
+      recordType: recordType,
+      recordId: recordId,
+      checkerId: '',
+      status: 'pending',
+      createdAt: DateTime.now(),
+    );
+    await _firestore.collection('qc_checks').add(qc.toMap());
+  }
+
+  Future<void> verifyQc(String id, String recordType, String recordId) async {
+    await _firestore.collection('qc_checks').doc(id).update({
+      'status': 'verified',
+    });
+    if (recordType == 'baseline_form') {
+      await _firestore.collection('assessments').doc(recordId).update({
+        'status': 'verified',
+      });
+    } else if (recordType == 'coaching_visit') {
+      await _firestore.collection('sessions').doc(recordId).update({
+        'verified': true,
+      });
+    }
+  }
+
+  Future<void> requestCorrectionQc(String id, String notes) async {
+    await _firestore.collection('qc_checks').doc(id).update({
+      'status': 'needs_correction',
+      'notes': notes,
+    });
+  }
+
+  // Graduation
+  Future<GraduationChecklist?> getGraduationChecklist(String enterpriseId) async {
+    final snapshot = await _firestore
+        .collection('graduation_checklists')
+        .where('enterpriseId', isEqualTo: enterpriseId)
+        .limit(1)
+        .get();
+    if (snapshot.docs.isEmpty) return null;
+    return GraduationChecklist.fromMap(snapshot.docs.first.id, snapshot.docs.first.data());
+  }
+
+  Future<void> requestGraduationApproval(String enterpriseId) async {
+    final docRef = _firestore.collection('graduation_checklists').doc(enterpriseId);
+    await docRef.set({
+      'enterpriseId': enterpriseId,
+      'requestedAt': Timestamp.now(),
+      'status': 'pending',
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> approveGraduation(String enterpriseId) async {
+    final docRef = _firestore.collection('graduation_checklists').doc(enterpriseId);
+    await docRef.update({
+      'mAndEApproved': true,
+      'approvedAt': Timestamp.now(),
+      'approvedBy': _auth.currentUser!.uid,
+    });
+    await _firestore.collection('enterprises').doc(enterpriseId).update({
+      'status': 'Graduated',
+    });
+  }
+}
+
+
+[======== ERRORS ========]
+Line 1, Column 1: info - The file name 'firestore_service copy.dart' isn't a lower_case_with_underscores identifier - lib\services\firestore_service copy.dart:1:1 - file_names
+
+============ lib\services\notification_service.dart ============
+
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+class NotificationService {
+  static final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+
+  static Future<void> initialize(FlutterLocalNotificationsPlugin plugin) async {
+    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+    final DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings();
+    final InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+    await plugin.initialize(initializationSettings);
+    await _fcm.requestPermission();
+    String? token = await _fcm.getToken();
+    print('FCM Token: $token');
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      _showNotification(message);
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {});
+  }
+
+  static void _showNotification(RemoteMessage message) {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'mesmer_channel',
+      'MESMER Notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: DarwinNotificationDetails(),
+    );
+    _localNotifications.show(
+      0,
+      message.notification?.title,
+      message.notification?.body,
+      platformChannelSpecifics,
+    );
+  }
+
+  static Future<void> sendLocalNotification(String title, String body) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'mesmer_channel',
+      'MESMER Notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: DarwinNotificationDetails(),
+    );
+    await _localNotifications.show(0, title, body, platformChannelSpecifics);
+  }
+}
+
+
+[======== ERRORS ========]
+Line 10, Column 68: info - Use 'const' with the constructor to improve performance - lib\services\notification_service.dart:10:68 - prefer_const_constructors
+Line 18, Column 5: info - Don't invoke 'print' in production code - lib\services\notification_service.dart:18:5 - avoid_print
+
+============ lib\services\sync_service.dart ============
+
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+
+class SyncService {
+  static Database? _database;
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDB();
+    return _database!;
+  }
+
+  Future<Database> _initDB() async {
+    String path = join(await getDatabasesPath(), 'mesmer_sync.db');
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE pending_uploads(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            collection TEXT,
+            data TEXT,
+            timestamp INTEGER
+          )
+        ''');
+      },
+    );
+  }
+
+  Future<void> queueUpload(String collection, Map<String, dynamic> data) async {
+    final db = await database;
+    await db.insert('pending_uploads', {
+      'collection': collection,
+      'data': data.toString(),
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+
+  Future<void> syncNow() async {
+    final db = await database;
+    final List<Map<String, dynamic>> pending = await db.query('pending_uploads');
+    for (var item in pending) {
+      try {
+        // Placeholder: actual upload to Firestore would go here
+        await db.delete('pending_uploads', where: 'id = ?', whereArgs: [item['id']]);
+      } catch (e) {}
+    }
+  }
+
+  Future<int> pendingCount() async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query('pending_uploads');
+    return result.length;
+  }
+}
+
+
+[======== ERRORS ========]
+Line 47, Column 19: info - Empty catch block - lib\services\sync_service.dart:47:19 - empty_catches
+
+============ lib\services\upload_service.dart ============
+
+import 'dart:io';
+import 'package:cloudinary_public/cloudinary_public.dart';
+import 'package:image_picker/image_picker.dart';
+
+class CloudinaryService {
+  static const String cloudName = 'YOUR_CLOUD_NAME';
+  static const String uploadPreset = 'YOUR_UPLOAD_PRESET';
+
+  static Future<String?> uploadImage(File imageFile) async {
+    try {
+      final cloudinary = CloudinaryPublic(cloudName, uploadPreset, cache: false);
+      
+      final CloudinaryResponse response = await cloudinary.uploadFile(
+        CloudinaryFile.fromFile(
+          imageFile.path,
+          resourceType: CloudinaryResourceType.Image,
+        ),
+      );
+
+      return response.secureUrl; // The public URL of your uploaded image
+    } catch (e) {
+      print('Upload failed: $e');
+      return null;
+    }
+  }
+
+  static Future<XFile?> pickImageFromGallery() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    return image;
+  }
+}
+
+[======== ERRORS ========]
+Line 22, Column 7: info - Don't invoke 'print' in production code - lib\services\upload_service.dart:22:7 - avoid_print
+
+============ lib\widgets\evidence_picker.dart ============
+
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/upload_service.dart'; // Contains CloudinaryService
+import '../models/evidence.dart';
+
+class EvidencePicker extends StatefulWidget {
+  final String enterpriseId;
+  final String recordType;
+  final String recordId;
+  final Function(List<Evidence>) onUploaded;
+
+  const EvidencePicker({
+    super.key,
+    required this.enterpriseId,
+    required this.recordType,
+    required this.recordId,
+    required this.onUploaded,
+  });
+
+  @override
+  State<EvidencePicker> createState() => _EvidencePickerState();
+}
+
+class _EvidencePickerState extends State<EvidencePicker> {
+  final ImagePicker _picker = ImagePicker();
+  List<File> _selectedImages = [];
+  bool _isUploading = false;
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
+    if (image != null && mounted) {
+      setState(() {
+        _selectedImages.add(File(image.path));
+      });
+    }
+  }
+
+  Future<void> _uploadImages() async {
+    if (_selectedImages.isEmpty) return;
+    setState(() => _isUploading = true);
+    final List<Evidence> uploadedEvidences = [];
+
+    for (var image in _selectedImages) {
+      // Use CloudinaryService static method (only one parameter)
+      final url = await CloudinaryService.uploadImage(image);
+      if (url != null) {
+        final evidence = Evidence(
+          id: '',
+          enterpriseId: widget.enterpriseId,
+          recordType: widget.recordType,
+          recordId: widget.recordId,
+          type: 'photo',
+          url: url,
+          uploadedBy: FirebaseAuth.instance.currentUser!.uid,
+          timestamp: DateTime.now(),
+          tags: [],
+        );
+        uploadedEvidences.add(evidence);
+      }
+    }
+
+    if (mounted) {
+      setState(() => _isUploading = false);
+      widget.onUploaded(uploadedEvidences);
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Add Evidence'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_selectedImages.isNotEmpty)
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _selectedImages.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Image.file(_selectedImages[index], fit: BoxFit.cover, width: 80),
+                  );
+                },
+              ),
+            ),
+          ElevatedButton.icon(
+            onPressed: _pickImage,
+            icon: const Icon(Icons.camera_alt),
+            label: const Text('Take Photo'),
+          ),
+          if (_selectedImages.isNotEmpty)
+            ElevatedButton(
+              onPressed: _uploadImages,
+              child: _isUploading ? const CircularProgressIndicator() : const Text('Upload'),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            if (mounted) Navigator.pop(context);
+          },
+          child: const Text('Cancel'),
+        ),
+      ],
+    );
+  }
+}
+
+[======== ERRORS ========]
+Line 28, Column 14: info - The private field _selectedImages could be 'final' - lib\widgets\evidence_picker.dart:28:14 - prefer_final_fields

@@ -11,6 +11,10 @@ class Enterprise {
   final List<String> priorities;
   final String? imageUrl;
   final String? coachId;
+  final double? baselineMonthlyRevenue;
+  final double? currentMonthlyRevenue;
+  final int? baselineEmployees;
+  final int? currentEmployees;
 
   Enterprise({
     required this.id,
@@ -25,6 +29,10 @@ class Enterprise {
     required this.priorities,
     this.imageUrl,
     this.coachId,
+    this.baselineMonthlyRevenue,
+    this.currentMonthlyRevenue,
+    this.baselineEmployees,
+    this.currentEmployees,
   });
 
   double get financeScore => scores['finance'] ?? 0;
@@ -32,7 +40,7 @@ class Enterprise {
   double get operationsScore => scores['operations'] ?? 0;
   double get hrScore => scores['hr'] ?? 0;
   double get governanceScore => scores['governance'] ?? 0;
-  double get overallScore => 
+  double get overallScore =>
       (financeScore + marketingScore + operationsScore + hrScore + governanceScore) / 5;
 
   Map<String, dynamic> toMap() {
@@ -48,6 +56,10 @@ class Enterprise {
       'priorities': priorities,
       'imageUrl': imageUrl,
       'coachId': coachId,
+      'baselineMonthlyRevenue': baselineMonthlyRevenue,
+      'currentMonthlyRevenue': currentMonthlyRevenue,
+      'baselineEmployees': baselineEmployees,
+      'currentEmployees': currentEmployees,
     };
   }
 
@@ -65,6 +77,10 @@ class Enterprise {
       priorities: List<String>.from(map['priorities'] ?? []),
       imageUrl: map['imageUrl'],
       coachId: map['coachId'],
+      baselineMonthlyRevenue: (map['baselineMonthlyRevenue'] as num?)?.toDouble(),
+      currentMonthlyRevenue: (map['currentMonthlyRevenue'] as num?)?.toDouble(),
+      baselineEmployees: map['baselineEmployees'] as int?,
+      currentEmployees: map['currentEmployees'] as int?,
     );
   }
 }

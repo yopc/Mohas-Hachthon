@@ -72,7 +72,6 @@ class AuthProvider extends ChangeNotifier {
         userData['createdAt'] = DateTime.now().toIso8601String();
         userData['accountStatus'] = 'active';
         userData['isFirstLogin'] = true;
-        
         await _firestoreService.createUserData(uid, userData);
         _user = credential.user;
         _coach = Coach.fromMap(userData, id: uid);
@@ -92,7 +91,6 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> updateCoachProfile(Map<String, dynamic> updates) async {
     if (_user == null) return;
-    
     _setLoading(true);
     _clearError();
     try {

@@ -48,9 +48,7 @@ class _AssessmentsScreenState extends State<AssessmentsScreen> with AutomaticKee
   Future<void> _refreshData() async {
     final assessmentProvider = Provider.of<AssessmentProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
     if (authProvider.isAuthenticated) {
-      print('🔄 AssessmentsScreen: Refreshing data...');
       assessmentProvider.refreshAssessments();
     }
   }
@@ -64,11 +62,7 @@ class _AssessmentsScreenState extends State<AssessmentsScreen> with AutomaticKee
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
     final assessmentProvider = Provider.of<AssessmentProvider>(context);
-    
-    print('📱 AssessmentsScreen build - Count: ${assessmentProvider.assessments.length}, Loading: ${assessmentProvider.isLoading}');
-    
     List filteredAssessments = assessmentProvider.assessments.where((a) {
       if (_selectedFilter == 'All') return true;
       return a.type == _selectedFilter;
@@ -141,7 +135,7 @@ class _AssessmentsScreenState extends State<AssessmentsScreen> with AutomaticKee
               ),
             ),
             Expanded(
-              child: assessmentProvider.errorMessage != null
+              child: assessmentProvider.error != null
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -162,7 +156,7 @@ class _AssessmentsScreenState extends State<AssessmentsScreen> with AutomaticKee
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            assessmentProvider.errorMessage!,
+                            assessmentProvider.error!,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey.shade500,
@@ -237,7 +231,6 @@ class _AssessmentsScreenState extends State<AssessmentsScreen> with AutomaticKee
               context,
               MaterialPageRoute(builder: (context) => const BaselineDiagnosisForm()),
             );
-            
             if (result == true && mounted) {
               _refreshData();
             }

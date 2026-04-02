@@ -23,13 +23,12 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
   final _progressController = TextEditingController();
   final _actionItemsController = TextEditingController();
   final _deadlineController = TextEditingController();
-  
   DateTime? _sessionDate;
   DateTime? _nextVisitDate;
   String? _visitType;
   String? _salesTrend;
   String? _loanStatus;
-  
+
   final List<String> _visitTypes = ['Physical', 'Phone', 'Online'];
   final List<String> _salesTrends = ['Increase', 'Decrease', 'Same'];
   final List<String> _loanStatuses = ['On Track', 'Delayed', 'Completed'];
@@ -46,23 +45,16 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate() && _selectedEnterpriseId != null) {
       setState(() => _isLoading = true);
-
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final sessionProvider = Provider.of<SessionProvider>(context, listen: false);
         final enterpriseProvider = Provider.of<EnterpriseProvider>(context, listen: false);
-
         String coachId = authProvider.user?.uid ?? '';
         String coachName = authProvider.coach?.fullName ?? '';
-        
         var enterprise = enterpriseProvider.enterprises.firstWhere((e) => e.id == _selectedEnterpriseId);
         String enterpriseName = enterprise.businessName;
-
         List<String> recommendations = _actionItemsController.text.split('\n').where((s) => s.isNotEmpty).toList();
-        if (recommendations.isEmpty) {
-          recommendations = ['Follow up on session action items'];
-        }
-
+        if (recommendations.isEmpty) recommendations = ['Follow up on session action items'];
         CoachingSession session = CoachingSession(
           id: '',
           enterpriseId: _selectedEnterpriseId!,
@@ -78,33 +70,21 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
           followUpRequired: _nextVisitDate != null,
           nextSessionDate: _nextVisitDate,
         );
-
         await sessionProvider.addSession(session);
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Coaching session saved successfully!'),
-              backgroundColor: AppTheme.successColor,
-              behavior: SnackBarBehavior.floating,
-            ),
+            const SnackBar(content: Text('Coaching session saved successfully!'), backgroundColor: AppTheme.successColor, behavior: SnackBarBehavior.floating),
           );
           Navigator.pop(context, true);
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: AppTheme.errorColor,
-              behavior: SnackBarBehavior.floating,
-            ),
+            SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor, behavior: SnackBarBehavior.floating),
           );
         }
       } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+        if (mounted) setState(() => _isLoading = false);
       }
     }
   }
@@ -112,13 +92,10 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
   @override
   Widget build(BuildContext context) {
     final enterpriseProvider = Provider.of<EnterpriseProvider>(context);
-
     return LoadingOverlay(
       isLoading: _isLoading,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Coaching Session'),
-        ),
+        appBar: AppBar(title: const Text('Coaching Session')),
         body: Container(
           color: AppTheme.backgroundColor,
           child: SingleChildScrollView(
@@ -133,97 +110,46 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Session Details',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
+                          const Text('Session Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
                           const SizedBox(height: 20),
-
                           DropdownButtonFormField<String>(
                             value: _selectedEnterpriseId,
-                            decoration: const InputDecoration(
-                              labelText: 'Enterprise',
-                              prefixIcon: Icon(Icons.business, color: AppTheme.primaryColor),
-                            ),
-                            items: enterpriseProvider.enterprises.map((e) {
-                              return DropdownMenuItem(
-                                value: e.id,
-                                child: Text(e.businessName),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedEnterpriseId = value;
-                              });
-                            },
+                            decoration: const InputDecoration(labelText: 'Enterprise', prefixIcon: Icon(Icons.business, color: AppTheme.primaryColor)),
+                            items: enterpriseProvider.enterprises.map((e) => DropdownMenuItem(value: e.id, child: Text(e.businessName))).toList(),
+                            onChanged: (value) => setState(() => _selectedEnterpriseId = value),
                             validator: (value) => value == null ? 'Please select an enterprise' : null,
                           ),
                           const SizedBox(height: 16),
-
                           InkWell(
                             onTap: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now(),
-                                firstDate: DateTime(2020),
-                                lastDate: DateTime.now(),
-                              );
+                              final date = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(2020), lastDate: DateTime.now());
                               if (date != null) setState(() => _sessionDate = date);
                             },
                             child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'Session Date',
-                                prefixIcon: Icon(Icons.calendar_today, color: AppTheme.primaryColor),
-                              ),
-                              child: Text(
-                                _sessionDate != null
-                                    ? '${_sessionDate!.day}/${_sessionDate!.month}/${_sessionDate!.year}'
-                                    : 'Select session date',
-                              ),
+                              decoration: const InputDecoration(labelText: 'Session Date', prefixIcon: Icon(Icons.calendar_today, color: AppTheme.primaryColor)),
+                              child: Text(_sessionDate != null ? '${_sessionDate!.day}/${_sessionDate!.month}/${_sessionDate!.year}' : 'Select session date'),
                             ),
                           ),
                           const SizedBox(height: 16),
-
                           DropdownButtonFormField<String>(
                             value: _visitType,
-                            decoration: const InputDecoration(
-                              labelText: 'Visit Type',
-                              prefixIcon: Icon(Icons.tour, color: AppTheme.primaryColor),
-                            ),
-                            items: _visitTypes.map((type) {
-                              return DropdownMenuItem(value: type, child: Text(type));
-                            }).toList(),
+                            decoration: const InputDecoration(labelText: 'Visit Type', prefixIcon: Icon(Icons.tour, color: AppTheme.primaryColor)),
+                            items: _visitTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
                             onChanged: (value) => setState(() => _visitType = value),
                             validator: (value) => value == null ? 'Visit type is required' : null,
                           ),
                           const SizedBox(height: 16),
-
                           TextFormField(
                             controller: _issuesDiscussedController,
                             maxLines: 4,
-                            decoration: const InputDecoration(
-                              labelText: 'Issues Discussed',
-                              prefixIcon: Icon(Icons.chat, color: AppTheme.primaryColor),
-                              hintText: 'Describe the issues discussed...',
-                              alignLabelWithHint: true,
-                            ),
+                            decoration: const InputDecoration(labelText: 'Issues Discussed', prefixIcon: Icon(Icons.chat, color: AppTheme.primaryColor), hintText: 'Describe the issues discussed...', alignLabelWithHint: true),
                             validator: (value) => value == null || value.isEmpty ? 'Issues discussed is required' : null,
                           ),
                           const SizedBox(height: 16),
-
                           TextFormField(
                             controller: _progressController,
                             maxLines: 3,
-                            decoration: const InputDecoration(
-                              labelText: 'Progress Since Last Visit',
-                              prefixIcon: Icon(Icons.trending_up, color: AppTheme.primaryColor),
-                              hintText: 'Describe progress made...',
-                              alignLabelWithHint: true,
-                            ),
+                            decoration: const InputDecoration(labelText: 'Progress Since Last Visit', prefixIcon: Icon(Icons.trending_up, color: AppTheme.primaryColor), hintText: 'Describe progress made...', alignLabelWithHint: true),
                             validator: (value) => value == null || value.isEmpty ? 'Progress description is required' : null,
                           ),
                         ],
@@ -231,42 +157,26 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Business Indicators',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
+                          const Text('Business Indicators', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 16),
-
                           DropdownButtonFormField<String>(
                             value: _salesTrend,
-                            decoration: const InputDecoration(
-                              labelText: 'Sales Trend',
-                              prefixIcon: Icon(Icons.show_chart, color: AppTheme.primaryColor),
-                            ),
-                            items: _salesTrends.map((trend) {
-                              return DropdownMenuItem(value: trend, child: Text(trend));
-                            }).toList(),
+                            decoration: const InputDecoration(labelText: 'Sales Trend', prefixIcon: Icon(Icons.show_chart, color: AppTheme.primaryColor)),
+                            items: _salesTrends.map((trend) => DropdownMenuItem(value: trend, child: Text(trend))).toList(),
                             onChanged: (value) => setState(() => _salesTrend = value),
                             validator: (value) => value == null ? 'Sales trend is required' : null,
                           ),
                           const SizedBox(height: 16),
-
                           DropdownButtonFormField<String>(
                             value: _loanStatus,
-                            decoration: const InputDecoration(
-                              labelText: 'Loan Status',
-                              prefixIcon: Icon(Icons.account_balance, color: AppTheme.primaryColor),
-                            ),
-                            items: _loanStatuses.map((status) {
-                              return DropdownMenuItem(value: status, child: Text(status));
-                            }).toList(),
+                            decoration: const InputDecoration(labelText: 'Loan Status', prefixIcon: Icon(Icons.account_balance, color: AppTheme.primaryColor)),
+                            items: _loanStatuses.map((status) => DropdownMenuItem(value: status, child: Text(status))).toList(),
                             onChanged: (value) => setState(() => _loanStatus = value),
                             validator: (value) => value == null ? 'Loan status is required' : null,
                           ),
@@ -275,38 +185,24 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Action Plan',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
+                          const Text('Action Plan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 16),
-
                           TextFormField(
                             controller: _actionItemsController,
                             maxLines: 3,
-                            decoration: const InputDecoration(
-                              labelText: 'Action Items',
-                              prefixIcon: Icon(Icons.checklist, color: AppTheme.primaryColor),
-                              hintText: 'List action items...',
-                            ),
+                            decoration: const InputDecoration(labelText: 'Action Items', prefixIcon: Icon(Icons.checklist, color: AppTheme.primaryColor), hintText: 'List action items...'),
                             validator: (value) => value == null || value.isEmpty ? 'Action items are required' : null,
                           ),
                           const SizedBox(height: 16),
-
                           TextFormField(
                             controller: _deadlineController,
-                            decoration: const InputDecoration(
-                              labelText: 'Deadline',
-                              prefixIcon: Icon(Icons.event, color: AppTheme.primaryColor),
-                              hintText: 'e.g., 2 weeks, 1 month',
-                            ),
+                            decoration: const InputDecoration(labelText: 'Deadline', prefixIcon: Icon(Icons.event, color: AppTheme.primaryColor), hintText: 'e.g., 2 weeks, 1 month'),
                             validator: (value) => value == null || value.isEmpty ? 'Deadline is required' : null,
                           ),
                         ],
@@ -314,39 +210,22 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Next Session',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                          ),
+                          const Text('Next Session', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 16),
-
                           InkWell(
                             onTap: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: DateTime.now().add(const Duration(days: 30)),
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime.now().add(const Duration(days: 365)),
-                              );
+                              final date = await showDatePicker(context: context, initialDate: DateTime.now().add(const Duration(days: 30)), firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)));
                               if (date != null) setState(() => _nextVisitDate = date);
                             },
                             child: InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'Schedule Next Visit',
-                                prefixIcon: Icon(Icons.calendar_month, color: AppTheme.primaryColor),
-                              ),
-                              child: Text(
-                                _nextVisitDate != null
-                                    ? '${_nextVisitDate!.day}/${_nextVisitDate!.month}/${_nextVisitDate!.year}'
-                                    : 'Select next visit date',
-                              ),
+                              decoration: const InputDecoration(labelText: 'Schedule Next Visit', prefixIcon: Icon(Icons.calendar_month, color: AppTheme.primaryColor)),
+                              child: Text(_nextVisitDate != null ? '${_nextVisitDate!.day}/${_nextVisitDate!.month}/${_nextVisitDate!.year}' : 'Select next visit date'),
                             ),
                           ),
                         ],
@@ -354,15 +233,11 @@ class _CoachingSessionFormState extends State<CoachingSessionForm> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _submitForm,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.successColor,
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.successColor, minimumSize: const Size(double.infinity, 50)),
                       child: const Text('Save Session'),
                     ),
                   ),
