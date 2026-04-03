@@ -5,7 +5,8 @@ class Training {
   final String title;
   final String module;
   final DateTime date;
-  final String location;
+  final GeoPoint locationCoordinates;   // new
+  final String locationAddress;          // new (human‑readable)
   final String trainerId;
   final int maxSeats;
   final DateTime createdAt;
@@ -15,7 +16,8 @@ class Training {
     required this.title,
     required this.module,
     required this.date,
-    required this.location,
+    required this.locationCoordinates,
+    required this.locationAddress,
     required this.trainerId,
     required this.maxSeats,
     required this.createdAt,
@@ -27,7 +29,8 @@ class Training {
       'title': title,
       'module': module,
       'date': Timestamp.fromDate(date),
-      'location': location,
+      'locationCoordinates': locationCoordinates,
+      'locationAddress': locationAddress,
       'trainerId': trainerId,
       'maxSeats': maxSeats,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -40,7 +43,8 @@ class Training {
       title: map['title'] ?? '',
       module: map['module'] ?? '',
       date: (map['date'] as Timestamp).toDate(),
-      location: map['location'] ?? '',
+      locationCoordinates: map['locationCoordinates'] as GeoPoint,
+      locationAddress: map['locationAddress'] ?? '',
       trainerId: map['trainerId'] ?? '',
       maxSeats: map['maxSeats'] ?? 0,
       createdAt: (map['createdAt'] as Timestamp).toDate(),

@@ -5,6 +5,7 @@ import '../providers/training_provider.dart';
 import '../providers/auth_provider.dart';
 import 'training_scheduler_screen.dart';
 import 'training_session_screen.dart';
+import 'training_map_screen.dart';  // ✅ import for map screen
 import '../theme/app_theme2.dart';
 
 class TrainingListScreen extends StatefulWidget {
@@ -36,6 +37,18 @@ class _TrainingListScreenState extends State<TrainingListScreen> {
         title: const Text('Training Management'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
+        actions: [
+          if (isSupervisor)
+            IconButton(
+              icon: const Icon(Icons.map),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TrainingMapScreen()),
+                );
+              },
+            ),
+        ],
       ),
       body: trainingProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -158,17 +171,26 @@ class _TrainingListScreenState extends State<TrainingListScreen> {
                     '${training.date.day}/${training.date.month}/${training.date.year}',
                     style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
-                  const SizedBox(width: 16),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
                   Icon(Icons.location_on, size: 14, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      training.location,
+                      training.locationAddress, // ✅ exact address
                       style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
                   Icon(Icons.people, size: 14, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Text(

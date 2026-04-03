@@ -1,9 +1,9 @@
-
 // import 'package:flutter/material.dart';
 // import 'package:mohas/screens/register_coach_from.dart';
 // import 'package:provider/provider.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
 // import '../providers/auth_provider.dart';
+// import '../providers/enterprise_provider.dart';
 // import '../models/coach_model.dart';
 // import '../models/enterprise.dart';
 // import '../models/assessment.dart';
@@ -33,6 +33,14 @@
 //   final List<String> _sessionFilters = ['All', 'Upcoming', 'Completed'];
 
 //   @override
+//   void initState() {
+//     super.initState();
+//     WidgetsBinding.instance.addPostFrameCallback((_) {
+//       Provider.of<EnterpriseProvider>(context, listen: false).fetchEnterprises(role: 'supervisor');
+//     });
+//   }
+
+//   @override
 //   Widget build(BuildContext context) {
 //     final authProvider = Provider.of<AuthProvider>(context);
 //     final supervisor = authProvider.coach;
@@ -50,6 +58,7 @@
 //           IconButton(icon: const Icon(Icons.logout, color: Colors.white), onPressed: () async => await authProvider.signOut()),
 //         ],
 //       ),
+      
 //       drawer: _buildDrawer(context, supervisor, authProvider),
 //       body: _selectedIndex == 0 ? _buildOverviewDashboard() : _buildTabContent(),
 //       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -178,9 +187,9 @@
 //           const SizedBox(height: 16),
 //           Row(
 //             children: [
-//               _buildWelcomeStat('Total Coaches', _buildTotalCoachesCount(), Icons.people),
+//               Expanded(child: _buildWelcomeStat('Total Coaches', _buildTotalCoachesCount(), Icons.people)),
 //               const SizedBox(width: 12),
-//               _buildWelcomeStat('Total Enterprises', _buildTotalEnterprisesCount(), Icons.business),
+//               Expanded(child: _buildWelcomeStat('Total Enterprises', _buildTotalEnterprisesCount(), Icons.business)),
 //             ],
 //           ),
 //         ],
@@ -189,21 +198,21 @@
 //   }
 
 //   Widget _buildWelcomeStat(String label, Widget value, IconData icon) {
-//     return Expanded(
-//       child: Container(
-//           padding: const EdgeInsets.all(12),
-//           decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-//           child: Row(
-//             children: [
-//               Icon(icon, color: Colors.white, size: 20),
-//               const SizedBox(width: 8),
-//               Expanded(
-//                   child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [value, Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11))],
-//               ))
-//             ],
-//           )),
+//     return Container(
+//       padding: const EdgeInsets.all(12),
+//       decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+//       child: Row(
+//         children: [
+//           Icon(icon, color: Colors.white, size: 20),
+//           const SizedBox(width: 8),
+//           Expanded(
+//             child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [value, Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11))],
+//             ),
+//           )
+//         ],
+//       ),
 //     );
 //   }
 
@@ -317,15 +326,15 @@
 //         const SizedBox(height: 12),
 //         Row(
 //           children: [
-//             _buildQuickActionButton('Add Coach', Icons.person_add, Colors.blue, () => setState(() => _selectedIndex = 1)),
+//             Expanded(child: _buildQuickActionButton('Add Coach', Icons.person_add, Colors.blue, () => setState(() => _selectedIndex = 1))),
 //             const SizedBox(width: 8),
-//             _buildQuickActionButton('Add Enterprise', Icons.add_business, Colors.green, () {}),
+//             Expanded(child: _buildQuickActionButton('Add Enterprise', Icons.add_business, Colors.green, () {})),
 //             const SizedBox(width: 8),
-//             _buildQuickActionButton('New Assessment', Icons.assignment_add, Colors.orange,
-//                 () => setState(() => _selectedIndex = 3)),
+//             Expanded(child: _buildQuickActionButton('New Assessment', Icons.assignment_add, Colors.orange,
+//                 () => setState(() => _selectedIndex = 3))),
 //             const SizedBox(width: 8),
-//             _buildQuickActionButton('Schedule Session', Icons.calendar_month, Colors.purple,
-//                 () => setState(() => _selectedIndex = 4)),
+//             Expanded(child: _buildQuickActionButton('Schedule Session', Icons.calendar_month, Colors.purple,
+//                 () => setState(() => _selectedIndex = 4))),
 //           ],
 //         ),
 //       ],
@@ -333,28 +342,26 @@
 //   }
 
 //   Widget _buildQuickActionButton(String label, IconData icon, Color color, VoidCallback onTap) {
-//     return Expanded(
-//       child: InkWell(
-//         onTap: onTap,
-//         borderRadius: BorderRadius.circular(12),
-//         child: Container(
-//           padding: const EdgeInsets.symmetric(vertical: 12),
-//           decoration: BoxDecoration(
-//               color: Colors.white,
-//               borderRadius: BorderRadius.circular(12),
-//               boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))]),
-//           child: Column(
-//             children: [
-//               Container(
-//                   padding: const EdgeInsets.all(8),
-//                   decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-//                   child: Icon(icon, color: color, size: 20)),
-//               const SizedBox(height: 4),
-//               Text(label,
-//                   style: TextStyle(fontSize: 10, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
-//                   textAlign: TextAlign.center),
-//             ],
-//           ),
+//     return InkWell(
+//       onTap: onTap,
+//       borderRadius: BorderRadius.circular(12),
+//       child: Container(
+//         padding: const EdgeInsets.symmetric(vertical: 12),
+//         decoration: BoxDecoration(
+//             color: Colors.white,
+//             borderRadius: BorderRadius.circular(12),
+//             boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))]),
+//         child: Column(
+//           children: [
+//             Container(
+//                 padding: const EdgeInsets.all(8),
+//                 decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+//                 child: Icon(icon, color: color, size: 20)),
+//             const SizedBox(height: 4),
+//             Text(label,
+//                 style: TextStyle(fontSize: 10, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+//                 textAlign: TextAlign.center),
+//           ],
 //         ),
 //       ),
 //     );
@@ -928,6 +935,9 @@
 //   Widget _buildEnterprisesOverview() {
 //     String enterpriseSearch = '';
 //     String enterpriseFilter = 'All';
+//     WidgetsBinding.instance.addPostFrameCallback((_) {
+//       Provider.of<EnterpriseProvider>(context, listen: false).fetchEnterprises(role: 'supervisor');
+//     });
 //     return StatefulBuilder(
 //       builder: (context, setState) => Container(
 //         color: AppTheme.backgroundColor,
@@ -1000,18 +1010,9 @@
 //                   ],
 //                 )),
 //             Expanded(
-//               child: StreamBuilder<QuerySnapshot>(
-//                 stream: FirebaseFirestore.instance.collection('enterprises').snapshots(),
-//                 builder: (context, snapshot) {
-//                   if (snapshot.hasError) {
-//                     return Center(child: Text('Error: ${snapshot.error}'));
-//                   }
-//                   if (!snapshot.hasData) {
-//                     return const Center(child: CircularProgressIndicator());
-//                   }
-//                   var enterprises = snapshot.data!.docs
-//                       .map((doc) => Enterprise.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-//                       .toList();
+//               child: Consumer<EnterpriseProvider>(
+//                 builder: (context, enterpriseProvider, _) {
+//                   var enterprises = enterpriseProvider.enterprises;
 //                   if (enterpriseSearch.isNotEmpty) {
 //                     enterprises = enterprises.where((e) =>
 //                         e.businessName.toLowerCase().contains(enterpriseSearch) ||
@@ -1456,18 +1457,17 @@
 //   }
 
 //   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
-//     return Expanded(
-//       child: Container(
-//           padding: const EdgeInsets.all(12),
-//           decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-//           child: Column(
-//             children: [
-//               Icon(icon, color: color, size: 24),
-//               const SizedBox(height: 4),
-//               Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-//               Text(label, style: TextStyle(fontSize: 11, color: color.withOpacity(0.8)), textAlign: TextAlign.center)
-//             ],
-//           )),
+//     return Container(
+//       padding: const EdgeInsets.all(12),
+//       decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+//       child: Column(
+//         children: [
+//           Icon(icon, color: color, size: 24),
+//           const SizedBox(height: 4),
+//           Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+//           Text(label, style: TextStyle(fontSize: 11, color: color.withOpacity(0.8)), textAlign: TextAlign.center)
+//         ],
+//       ),
 //     );
 //   }
 
@@ -1945,6 +1945,7 @@ import '../theme/app_theme2.dart';
 import 'profile_screen.dart';
 import 'qc_queue_screen.dart';
 import 'training_list_screen.dart';
+import 'training_map_screen.dart';      // ✅ ADDED: import for TrainingMapScreen
 import 'enterprise_profile_screen.dart';
 
 class SupervisorDashboard extends StatefulWidget {
@@ -1990,6 +1991,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
           IconButton(icon: const Icon(Icons.logout, color: Colors.white), onPressed: () async => await authProvider.signOut()),
         ],
       ),
+      
       drawer: _buildDrawer(context, supervisor, authProvider),
       body: _selectedIndex == 0 ? _buildOverviewDashboard() : _buildTabContent(),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -3791,6 +3793,11 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                   _buildDrawerItem(Icons.school, 'Training Management', () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const TrainingListScreen()));
+                  }),
+                  // ✅ ADDED: Training Map drawer item
+                  _buildDrawerItem(Icons.map, 'Training Map', () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const TrainingMapScreen()));
                   }),
                   _buildDrawerItem(Icons.person_add, 'Register New Coach', () {
                     Navigator.pop(context);
