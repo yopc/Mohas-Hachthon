@@ -5,7 +5,7 @@ import '../providers/training_provider.dart';
 import '../providers/auth_provider.dart';
 import 'training_scheduler_screen.dart';
 import 'training_session_screen.dart';
-import 'training_map_screen.dart';  // ✅ import for map screen
+import 'training_map_screen.dart';  
 import '../theme/app_theme2.dart';
 
 class TrainingListScreen extends StatefulWidget {
