@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 
 class LocationPicker extends StatefulWidget {
   final Function(LatLng coordinates, String address) onLocationSelected;
@@ -13,13 +14,16 @@ class LocationPicker extends StatefulWidget {
 }
 
 class _LocationPickerState extends State<LocationPicker> {
-  LatLng? _currentPosition;
+  final TextEditingController _searchController = TextEditingController();
+  final MapController _mapController = MapController();
   LatLng? _selectedPosition;
   String? _selectedAddress;
-  GoogleMapController? _mapController;
-  bool _isLoading = true;
-  double _distance = 0.0;
-  final double _maxAllowedDistance = 100.0; // meters
+  bool _isLoading = false;
+  final bool _isMapReady = false;
+
+  // Default center (Addis Ababa)
+  static const LatLng _defaultCenter = LatLng(9.03, 38.74);
+  static const double _defaultZoom = 13.0;
 
   @override
   void initState() {
@@ -30,7 +34,6 @@ class _LocationPickerState extends State<LocationPicker> {
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      await Geolocator.openLocationSettings();
       return;
     }
 
@@ -38,24 +41,26 @@ class _LocationPickerState extends State<LocationPicker> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location permission denied')),
-        );
         return;
       }
     }
 
-    Position position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      _selectedPosition = _currentPosition;
-      _isLoading = false;
-    });
-    _updateAddress(_selectedPosition!);
-    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_selectedPosition!, 15));
+    try {
+      Position position = await Geolocator.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _selectedPosition = LatLng(position.latitude, position.longitude);
+        });
+        _mapController.move(_selectedPosition!, _defaultZoom);
+        await _updateAddressFromPosition(_selectedPosition!);
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('Geolocation error: $e');
+    }
   }
 
-  Future<void> _updateAddress(LatLng position) async {
+  Future<void> _updateAddressFromPosition(LatLng position) async {
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
@@ -63,67 +68,69 @@ class _LocationPickerState extends State<LocationPicker> {
       );
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks.first;
+        String address = '${place.street ?? ''}, ${place.locality ?? ''}, ${place.country ?? ''}'
+            .replaceAll(RegExp(r'^, |, ,'), '')
+            .trim();
+        if (address.isEmpty) address = 'Selected location';
         setState(() {
-          _selectedAddress = '${place.street}, ${place.locality}, ${place.country}';
+          _selectedAddress = address;
+        });
+      } else {
+        setState(() {
+          _selectedAddress = 'Selected location (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
         });
       }
     } catch (e) {
       setState(() {
-        _selectedAddress = 'Unknown location';
+        _selectedAddress = 'Selected location (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
       });
     }
   }
 
-  void _onMapTap(LatLng tappedPoint) {
-    setState(() {
-      _selectedPosition = tappedPoint;
-    });
-    _updateAddress(tappedPoint);
-    _calculateDistance();
+  Future<void> _searchAddress() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+
+    setState(() => _isLoading = true);
+    try {
+      List<Location> locations = await locationFromAddress(query);
+      if (locations.isNotEmpty) {
+        final loc = locations.first;
+        final newPos = LatLng(loc.latitude, loc.longitude);
+        _mapController.move(newPos, _defaultZoom);
+        setState(() {
+          _selectedPosition = newPos;
+        });
+        await _updateAddressFromPosition(newPos);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location not found'), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
-  void _calculateDistance() {
-    if (_currentPosition == null || _selectedPosition == null) return;
-    double distance = Geolocator.distanceBetween(
-      _currentPosition!.latitude,
-      _currentPosition!.longitude,
-      _selectedPosition!.latitude,
-      _selectedPosition!.longitude,
-    );
+  void _onMapTap(TapPosition tapPosition, LatLng point) {
     setState(() {
-      _distance = distance;
+      _selectedPosition = point;
     });
+    _updateAddressFromPosition(point);
   }
 
   void _confirmLocation() {
-    if (_selectedPosition == null || _selectedAddress == null) {
+    if (_selectedPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a location')),
+        const SnackBar(content: Text('Please tap on the map to select a location')),
       );
       return;
     }
-
-    if (_distance > _maxAllowedDistance) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Location Mismatch'),
-          content: Text(
-            'The selected location is ${_distance.toStringAsFixed(0)} meters away from your current device location.\n\n'
-            'For accurate training location, please select a point within ${_maxAllowedDistance.toStringAsFixed(0)} meters of your current position.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Go Back'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    widget.onLocationSelected(_selectedPosition!, _selectedAddress!);
+    widget.onLocationSelected(_selectedPosition!, _selectedAddress ?? 'Selected location');
     Navigator.pop(context);
   }
 
@@ -139,62 +146,90 @@ class _LocationPickerState extends State<LocationPicker> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
+      body: Column(
+        children: [
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
               children: [
                 Expanded(
-                  child: GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: _currentPosition!,
-                      zoom: 15,
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search for an address...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _isLoading
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          : null,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    onMapCreated: (controller) => _mapController = controller,
-                    onTap: _onMapTap,
-                    markers: {
-                      if (_currentPosition != null)
-                        Marker(
-                          markerId: const MarkerId('current'),
-                          position: _currentPosition!,
-                          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-                          infoWindow: const InfoWindow(title: 'Your device location'),
-                        ),
-                      if (_selectedPosition != null)
-                        Marker(
-                          markerId: const MarkerId('selected'),
-                          position: _selectedPosition!,
-                          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-                          infoWindow: const InfoWindow(title: 'Selected training location'),
-                        ),
-                    },
+                    onSubmitted: (_) => _searchAddress(),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: Colors.white,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _selectedAddress ?? 'Tap on map to select location',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on, size: 16),
-                          const SizedBox(width: 4),
-                          Text('Distance from device: ${_distance.toStringAsFixed(0)} m'),
-                          const SizedBox(width: 16),
-                          if (_distance > _maxAllowedDistance)
-                            const Icon(Icons.warning, color: Colors.red, size: 16),
-                        ],
-                      ),
-                    ],
-                  ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.my_location),
+                  onPressed: _getCurrentLocation,
+                  tooltip: 'My Location',
                 ),
               ],
             ),
+          ),
+          // Map
+          Expanded(
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: _defaultCenter,
+                initialZoom: _defaultZoom,
+                onTap: _onMapTap,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.mohas',
+                ),
+                if (_selectedPosition != null)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        width: 40,
+                        height: 40,
+                        point: _selectedPosition!,
+                        child: const Icon(
+                          Icons.location_pin,
+                          color: Colors.red,
+                          size: 40,
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+          // Selected location info
+          if (_selectedAddress != null)
+            Container(
+              padding: const EdgeInsets.all(12),
+              color: Colors.grey.shade100,
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on, color: Colors.green),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _selectedAddress!,
+                      style: const TextStyle(fontSize: 14),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

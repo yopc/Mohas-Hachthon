@@ -38,43 +38,95 @@ class _EnterpriseProfileScreenState extends State<EnterpriseProfileScreen> with 
     super.dispose();
   }
 
-  Future<void> _loadEnterprise() async {
-    final enterpriseProvider = Provider.of<EnterpriseProvider>(context, listen: false);
-    // Try to find in existing list
-    Enterprise? existing = enterpriseProvider.enterprises.firstWhere(
-      (e) => e.id == widget.enterpriseId,
-      orElse: () => null as Enterprise,
-    );
+  // Future<void> _loadEnterprise() async {
+  //   final enterpriseProvider = Provider.of<EnterpriseProvider>(context, listen: false);
+  //   // Try to find in existing list
+  //   Enterprise? existing = enterpriseProvider.enterprises.firstWhere(
+  //     (e) => e.id == widget.enterpriseId,
+  //     orElse: () => null as Enterprise,
+  //   );
+  //   setState(() {
+  //     _enterprise = existing;
+  //     _isLoading = false;
+  //   });
+  //   _loadData();
+  //   return;
+  //     // Fetch directly from Firestore
+  //   final fetched = await enterpriseProvider.getEnterpriseById(widget.enterpriseId);
+  //   if (mounted) {
+  //     setState(() {
+  //       _enterprise = fetched;
+  //       _isLoading = false;
+  //     });
+  //     if (fetched != null) {
+  //       _loadData();
+  //     } else {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Enterprise not found'), backgroundColor: AppTheme.errorColor),
+  //       );
+  //     }
+  //   }
+  // }
+
+  // void _loadData() {
+  //   if (_enterprise == null) return;
+  //   Provider.of<IapProvider>(context, listen: false).fetchIap(widget.enterpriseId);
+  //   Provider.of<EvidenceProvider>(context, listen: false).fetchEvidence(widget.enterpriseId);
+  //   Provider.of<GraduationProvider>(context, listen: false).fetchChecklist(widget.enterpriseId);
+  // }
+
+// Inside _EnterpriseProfileScreenState
+// Inside _EnterpriseProfileScreenState
+
+Future<void> _loadEnterprise() async {
+  final enterpriseProvider = Provider.of<EnterpriseProvider>(context, listen: false);
+  // Try to find in existing list
+  Enterprise? existing;
+  try {
+    existing = enterpriseProvider.enterprises.firstWhere((e) => e.id == widget.enterpriseId);
+  } catch (e) {
+    existing = null;
+  }
+
+  if (existing != null) {
     setState(() {
       _enterprise = existing;
       _isLoading = false;
     });
-    _loadData();
+    // ✅ Defer data loading to avoid build-phase notifyListeners()
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadData();
+    });
     return;
-      // Fetch directly from Firestore
-    final fetched = await enterpriseProvider.getEnterpriseById(widget.enterpriseId);
-    if (mounted) {
-      setState(() {
-        _enterprise = fetched;
-        _isLoading = false;
+  }
+
+  // Fetch directly from Firestore
+  final fetched = await enterpriseProvider.getEnterpriseById(widget.enterpriseId);
+  if (mounted) {
+    setState(() {
+      _enterprise = fetched;
+      _isLoading = false;
+    });
+    if (fetched != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadData();
       });
-      if (fetched != null) {
-        _loadData();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Enterprise not found'), backgroundColor: AppTheme.errorColor),
-        );
-      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enterprise not found'), backgroundColor: AppTheme.errorColor),
+      );
     }
   }
+}
 
-  void _loadData() {
-    if (_enterprise == null) return;
-    Provider.of<IapProvider>(context, listen: false).fetchIap(widget.enterpriseId);
-    Provider.of<EvidenceProvider>(context, listen: false).fetchEvidence(widget.enterpriseId);
-    Provider.of<GraduationProvider>(context, listen: false).fetchChecklist(widget.enterpriseId);
-  }
-
+void _loadData() {
+  if (_enterprise == null) return;
+  print('🔄 Loading data for enterprise ${_enterprise!.businessName}');
+  Provider.of<IapProvider>(context, listen: false).fetchIap(widget.enterpriseId);
+  Provider.of<EvidenceProvider>(context, listen: false).fetchEvidence(widget.enterpriseId);
+  Provider.of<GraduationProvider>(context, listen: false).fetchChecklist(widget.enterpriseId);
+}
+  
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -602,23 +654,18 @@ class _EnterpriseProfileScreenState extends State<EnterpriseProfileScreen> with 
     );
   }
 
-  Widget? _buildFloatingButton(Enterprise enterprise) {
-    const isGraduationPending = false; // TODO: check actual graduation status
-    if (!isGraduationPending) {
-      return FloatingActionButton(
-        child: const Icon(Icons.edit),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => IapEditorScreen(enterpriseId: widget.enterpriseId),
-            ),
-          ).then((_) => _loadData());
-        },
-      );
-    }
-    return null;
-  }
-
+Widget? _buildFloatingButton(Enterprise enterprise) {
+  return FloatingActionButton(
+    child: const Icon(Icons.edit),
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => IapEditorScreen(enterpriseId: widget.enterpriseId),
+        ),
+      ).then((_) => _loadData());  // ✅ This refreshes the IAP tab
+    },
+  );
+}
   String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
 }

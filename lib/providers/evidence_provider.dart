@@ -23,15 +23,29 @@ class EvidenceProvider extends ChangeNotifier {
     });
   }
 
+  // Future<void> addEvidence(Evidence evidence) async {
+  //   try {
+  //     await _firestore.addEvidence(evidence);
+  //     // The stream will update automatically
+  //   } catch (e) {
+  //     _error = e.toString();
+  //     rethrow;
+  //   }
+  // }
+
+
+
   Future<void> addEvidence(Evidence evidence) async {
-    try {
-      await _firestore.addEvidence(evidence);
-      // The stream will update automatically
-    } catch (e) {
-      _error = e.toString();
-      rethrow;
-    }
+  print('➕ Adding evidence to Firestore: ${evidence.url}');
+  try {
+    await _firestore.addEvidence(evidence);
+    print('✅ Evidence added');
+  } catch (e) {
+    print('❌ Error adding evidence: $e');
+    _error = e.toString();
+    rethrow;
   }
+}
 
   void _setLoading(bool value) {
     _isLoading = value;

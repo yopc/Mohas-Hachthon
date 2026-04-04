@@ -8,7 +8,7 @@ class NotificationService {
   static Future<void> initialize(FlutterLocalNotificationsPlugin plugin) async {
     const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
     const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings();
-    final InitializationSettings initializationSettings = InitializationSettings(
+    const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
     );

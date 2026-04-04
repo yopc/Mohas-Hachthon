@@ -22,6 +22,7 @@ class _IapEditorScreenState extends State<IapEditorScreen> {
   @override
   void initState() {
     super.initState();
+    print('🟢 IapEditorScreen opened for enterprise ${widget.enterpriseId}');
     _loadIap();
   }
 
@@ -58,6 +59,13 @@ class _IapEditorScreenState extends State<IapEditorScreen> {
   }
 
   Future<void> _saveIap() async {
+    print('🔵 _saveIap STARTED');
+    if (_tasks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add at least one task'), backgroundColor: AppTheme.errorColor),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
     final provider = Provider.of<IapProvider>(context, listen: false);
     final iap = Iap(
@@ -68,15 +76,18 @@ class _IapEditorScreenState extends State<IapEditorScreen> {
       enterpriseSigned: provider.iap?.enterpriseSigned ?? false,
       updatedAt: DateTime.now(),
     );
+    print('📦 IAP object: ${iap.enterpriseId}, tasks: ${_tasks.length}');
     try {
       await provider.saveIap(iap);
+      print('✅ IAP saved, popping...');
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
+      print('❌ ERROR in _saveIap: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.errorColor),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -92,6 +103,7 @@ class _IapEditorScreenState extends State<IapEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('🔨 Building IapEditorScreen');
     return Scaffold(
       appBar: AppBar(
         title: const Text('Individual Action Plan'),
@@ -163,6 +175,27 @@ class _IapEditorScreenState extends State<IapEditorScreen> {
                   ),
                 );
               },
+            ),
+          ),
+          // ✅ ADD A VISIBLE SAVE BUTTON AT THE BOTTOM
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _saveIap,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.successColor,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('SAVE IAP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
             ),
           ),
         ],

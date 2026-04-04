@@ -434,7 +434,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
     summary.writeln('"Enterprises with >=8 Coaching Sessions",$enterprisesWithMin8Sessions');
 
-    String fullCsv = summary.toString() + '\n' + csv.toString();
+    String fullCsv = '$summary\n$csv';
     final bytes = Uint8List.fromList(fullCsv.codeUnits);
 
     if (kIsWeb) {

@@ -1,6 +1,7 @@
+
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 import '../providers/training_provider.dart';
 import '../theme/app_theme2.dart';
 
@@ -26,7 +27,7 @@ class _TrainingMapScreenState extends State<TrainingMapScreen> {
 
   Future<void> _loadTrainings() async {
     final provider = Provider.of<TrainingProvider>(context, listen: false);
-    // Ensure trainings are fetched
+    // Ensure the stream is started
     provider.fetchTrainings();
 
     // Wait a moment for data to load (or use a listener)
@@ -38,7 +39,6 @@ class _TrainingMapScreenState extends State<TrainingMapScreen> {
       return;
     }
 
-    // Create markers for each training
     final markers = <Marker>{};
     for (var training in trainings) {
       final lat = training.locationCoordinates.latitude;

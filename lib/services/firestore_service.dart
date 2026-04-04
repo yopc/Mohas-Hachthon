@@ -157,14 +157,20 @@ class FirestoreService {
     return Iap.fromMap(snapshot.docs.first.id, snapshot.docs.first.data());
   }
 
-  Future<void> saveIap(Iap iap) async {
-    final data = iap.toMap();
-    if (iap.id.isEmpty) {
-      await _firestore.collection('iaps').add(data);
-    } else {
-      await _firestore.collection('iaps').doc(iap.id).update(data);
-    }
+ // services/firestore_service.dart
+// services/firestore_service.dart
+Future<void> saveIap(Iap iap) async {
+  final docId = iap.id.isNotEmpty ? iap.id : iap.enterpriseId;
+  final data = iap.toMap();
+  print('📤 Saving IAP for enterprise ${iap.enterpriseId} using docId: $docId');
+  try {
+    await _firestore.collection('iaps').doc(docId).set(data, SetOptions(merge: true));
+    print('✅ IAP saved successfully with ID: $docId');
+  } catch (e) {
+    print('❌ Firestore saveIap error: $e');
+    rethrow;
   }
+}
 
   Future<void> updateIapTaskStatus(String iapId, String taskId, String newStatus) async {
     final docRef = _firestore.collection('iaps').doc(iapId);

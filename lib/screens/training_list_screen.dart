@@ -1,11 +1,13 @@
+
+
 import 'package:flutter/material.dart';
+import 'package:mohas/screens/training_map_screen.dart';
+import 'package:mohas/screens/training_scheduler_screen.dart';
 import 'package:provider/provider.dart';
 import '../models/training.dart';
 import '../providers/training_provider.dart';
 import '../providers/auth_provider.dart';
-import 'training_scheduler_screen.dart';
 import 'training_session_screen.dart';
-import 'training_map_screen.dart';  
 import '../theme/app_theme2.dart';
 
 class TrainingListScreen extends StatefulWidget {
@@ -34,10 +36,20 @@ class _TrainingListScreenState extends State<TrainingListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Training Management'),
+        title: const Text('Training Management', style: TextStyle(color: Colors.white)),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         actions: [
+          // Manual refresh button
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              trainingProvider.refreshTrainings();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Refreshing trainings...'), duration: Duration(seconds: 1)),
+              );
+            },
+          ),
           if (isSupervisor)
             IconButton(
               icon: const Icon(Icons.map),
@@ -50,35 +62,13 @@ class _TrainingListScreenState extends State<TrainingListScreen> {
             ),
         ],
       ),
-      body: trainingProvider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : trainingProvider.trainings.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.school_outlined, size: 64, color: Colors.grey.shade400),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No training sessions scheduled',
-                        style: TextStyle(fontSize: 18, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Tap the + button to schedule a new training',
-                        style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: trainingProvider.trainings.length,
-                  itemBuilder: (context, index) {
-                    final training = trainingProvider.trainings[index];
-                    return _buildTrainingCard(training);
-                  },
-                ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          trainingProvider.refreshTrainings();
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: _buildBody(trainingProvider),
+      ),
       floatingActionButton: canSchedule
           ? FloatingActionButton(
               onPressed: () async {
@@ -87,13 +77,72 @@ class _TrainingListScreenState extends State<TrainingListScreen> {
                   MaterialPageRoute(builder: (context) => const TrainingSchedulerScreen()),
                 );
                 if (result == true && mounted) {
-                  trainingProvider.fetchTrainings();
+                  // After saving, force a refresh to ensure the list updates
+                  trainingProvider.refreshTrainings();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Training created successfully!'),
+                      backgroundColor: AppTheme.successColor,
+                    ),
+                  );
                 }
               },
               backgroundColor: AppTheme.primaryColor,
               child: const Icon(Icons.add),
             )
           : null,
+    );
+  }
+
+  Widget _buildBody(TrainingProvider provider) {
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (provider.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+            const SizedBox(height: 16),
+            const Text('Error loading trainings:', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(provider.error!, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => provider.refreshTrainings(),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+    if (provider.trainings.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.school_outlined, size: 64, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            Text(
+              'No training sessions scheduled',
+              style: TextStyle(fontSize: 18, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap the + button to schedule a new training',
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: provider.trainings.length,
+      itemBuilder: (context, index) {
+        final training = provider.trainings[index];
+        return _buildTrainingCard(training);
+      },
     );
   }
 
@@ -180,7 +229,7 @@ class _TrainingListScreenState extends State<TrainingListScreen> {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      training.locationAddress, // ✅ exact address
+                      training.locationAddress,
                       style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                       overflow: TextOverflow.ellipsis,
                     ),
